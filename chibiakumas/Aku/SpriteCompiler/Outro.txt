@@ -1,0 +1,5 @@
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\FinalBattle2..bmp
+bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_haunting..bmp
+bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Prank..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Camping..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\FinalBattle3..bmp

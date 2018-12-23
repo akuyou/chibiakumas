@@ -1,0 +1,2063 @@
+Debug_ShowLevelTime equ 1
+nolist
+
+Support64k equ 1  ; enable code only needed by 64k
+Support128k equ 1 ; enable code only needed by 128k+ (keep enabled for 256/512k etc)
+
+
+;buildZXS equ 1
+;buildZXS_DSK equ 1
+;buildZXS_TRD equ 1
+;buildZXS_TAP equ 1
+
+
+;buildMSX equ 1
+;buildMSX_V9K equ 1 ;V9990 support
+
+buildCPC equ 1
+ifdef buildCPC
+	CPC320 equ 1	;CPC Screen width=320 (otherwise 256)
+endif
+
+
+;buildCPC_Plus equ 1
+;SupportPlus equ 1
+
+
+
+
+
+
+read "Eventstreamdefinitions.asm"
+read "CoreDefs.asm"
+
+LevelDataStart equ &0000 ;Start of the data which is stored on disk
+
+
+
+ifdef buildZXS
+	write "..\BldZX\Level01.bin"
+endif 
+
+
+ifdef buildMSX
+	write "..\RelMSX\disk1\T10-SC1.D01"
+	db &FE     ; magic number
+	dw FileBeginLevel    ; begin address
+	dw FileEndLevel - 1  ; end address
+	dw FileBeginLevel;Execute  ; program execution address (for ,R option)
+endif
+
+
+
+
+
+
+org Akuyou_LevelStart
+;LevelOrigin
+FileBeginLevel:
+ifdef buildCPC
+	incbin "..\ResCPC\LEVEL1A.SPR"
+endif
+ifdef buildZXS
+	incbin "..\ResZX\LEVEL1A.SPR"
+endif
+ifdef buildMSX
+	incbin "..\ResMSX\LEVEL1A.MAP"
+MSXTiles:
+	incbin "..\ResMSX\Level01-Tiles.RLE"
+MSXTiles_End:
+
+MsxTilesPos equ 1024-64
+endif
+
+;limit &4000
+
+
+
+
+
+
+
+
+
+RasterColors_ColorArray1Alt:
+	defb 1
+	defb 1				
+	defb &54,&55,&4A,&4B		;Black,DkBlue,LtYellow,White
+RasterColors_ColorArray2Alt:
+	defb 2	; Switches
+	defb 16	;delay			
+	defb &54,&5D,&59,&4B
+	defb 16	;delay			
+	defb &54,&58,&5F,&4B
+RasterColors_ColorArray3Alt:
+	defb 0
+;	defb 1
+;	defb &54,&54,&54,&54		 :IlluminatedPaletteCAlt_Plus2
+RasterColors_ColorArray4Alt:
+	defb 2 ; no of switches
+	defb 0	;delays			
+	defb &54,&58,&51,&4B		;Black,Red,Grey,White
+	defb 32
+	defb &54,&4C,&51,&4B	
+
+
+
+
+
+ShowBossText:
+	ld a,5 :OnscreenTimer_Plus1
+	or a
+	ret z
+
+
+;ShowBossText_StartText
+	;ld hl,&C000
+	;call Akuyou_ShowSprite_SetBankAddr
+	
+	ld a,1
+	call Akuyou_SpriteBank_Font	;Remember - This now corrupts BC!
+
+	ld bc,BossText :OnscreenTextPointer_Plus2
+	call AkuYou_Player_GetPlayerVars
+	ld a,(iy+0)
+	sub 38
+	srl a
+	srl a
+	srl a
+	ld l,a
+	ld a,(iy+1)
+	sub 16
+	srl a
+	srl a
+	ld h,a
+
+	ld a,1:BossCharNum_Plus1
+	ld i,a	; show up to 255 chars
+	
+ShowBossText_MoreText:
+	ld a,(bc)
+
+	or a
+	jr z,ShowBossText_AllOnscreen ; See if we have reached the end of the string
+	cp 9
+	jr z,ShowBossText_More2Come ; See if we have reached the end of the string
+	;inc bc
+
+	push hl
+		call Akuyou_DrawText_LocateSprite4CR
+
+		call Akuyou_DrawText_PrintString
+	pop hl
+	inc l
+	inc l
+	inc l
+	ld a,i
+	dec a
+	inc bc
+	jp nz,ShowBossText_MoreText
+
+	ld a,(bc)
+	or a
+	jp z,ShowBossText_AllOnscreen ; See if we have reached the end of the string
+	ld a,(BossCharNum_Plus1-1)
+	inc a
+	nop
+	nop :ShowTextSpeedup_Plus1
+ShowBossTextNoSpeedup:
+	ld (BossCharNum_Plus1-1),a
+
+ret
+ShowBossText_AllOnscreen:
+	ld a,(OnscreenTimer_Plus1-1)
+	dec a
+	ld (OnscreenTimer_Plus1-1),a
+	or a
+	ret nz
+	ld (OnscreenTimer_Plus1-1),a
+;	ld a,BossText2End-BossText2-20
+	ld a,1
+	ld (BossCharNum_Plus1-1),a
+ret
+ShowBossText_More2Come:
+ld a,(OnscreenTimer_Plus1-1)
+	ld a,5:OnscreenTimerB_Plus1
+	dec a
+	ld (OnscreenTimerB_Plus1-1),a
+	or a
+	ret nz
+	ld a,1
+	ld (BossCharNum_Plus1-1),a
+	ld a,15 
+;	ld (OnScreenTextReset_Plus1-1),a
+	inc bc
+	ld (OnscreenTextPointer_Plus2-2),bc
+	ld a,5
+	ld (OnscreenTimerB_Plus1-1),a
+ret
+
+BossText: 
+db  "Blah blah blah",13,"blah blah blah blah blah blah blah","!"+&80,9,"blah blah blah blah blah blah blah!",13,"blah blah blah blah blah blah blah!","!"+&80
+db &0
+
+
+AnimatorPointers
+defw AnimatorData
+AnimatorData
+; First byte is the 'Tick map' which defines when the animation should update
+defb %00000010		;Anim Freq
+; all remaining bytes are anim frames in the form Command-Var-Var-Var
+defb 01,128+01,0,0		;Sprite Anim
+defb 01,128+02,0,0		;Sprite Anim
+defb 00				;End of loop
+
+
+
+
+
+EventStreamArray:
+
+;defb 1,128,&24,128+64+60		; Move Static
+
+
+
+
+defb 0,%01110000+4			; 4 Commands
+	defb 240,0,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&54,&54	
+
+	defb 240,26*0+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 1
+	defb 1				
+	defb &54,&54,&54,&54		
+
+	defb 240,26*1+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 0
+	defb 1				
+	defb &54,&54,&54,&54		
+
+	defb 240,26*2+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&54,&54		
+
+
+
+; Define the background
+
+;defb 0,240+1,0,41				; (Time,Cmd,Off,Bytes) Load 41 bytes into the background - 41 bytes is the limit
+
+;defb &F0,&F0	;1; first line
+;defb 196,&D0	;2; line num, New byte
+;defb 190,&70	;3
+;defb 186,&A0	;4
+;defb 180,&50	;5
+;defb 176,&80	;6
+;defb 170,&20	;7
+;defb 166,&00	;8
+;defb 160,&00	;9
+;defb 36,&20	;10
+;defb 32,&80	;11
+;defb 28,&50	;12
+;defb 24,&A0	;13
+;defb 20,&70	;14
+;defb 16,&D0	;15
+;defb 12,&69	;16
+;defb 10,&2D	;17
+;defb 08,&2F	;18
+;defb 06,&8f	;19
+;defb 02,&0F	;20
+;defb 255
+
+;We will use 4 Paralax layers
+; ---------()- (sky)		%11001000
+; ------------ (Far)		%11000100
+; -----X---X-- (mid)		%11000010	Bank 1
+; []=====[]=== (foreground) 	%11000001	Bank 0
+
+defb 0,evtReprogram_PowerupSprites,128+38,128+39,128+40,128+16	; Define powerup sprites
+
+; Background L
+defb 0,128+4,1,%11000001,0			; Program - Bitshift Sprite... Move - dir Left Slow ... Life - immortal
+defb 0,%10010000+15,0				; Save Object settings to Bank 0
+
+defb 0,128+4,1,%11000010,0			; Program - Bitshift Sprite... Move - dir Left Slow ... Life - immortal
+defb 0,%10010000+15,1				; Save Object settings to Bank 1
+
+; Rock Chick
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%01100000+11,&22,%11000000+1	; Program - Fire Burst... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	1			; Sprite 1 Frame animater
+defb 	%10010000+15,2				; Save Object settings to Bank 2
+
+
+;defb 0,%01110000+3			; 3 commands at the same timepoint
+;defb 	128+4,%01100000+11,&22,%11000000+4	; Program - Burst left slow... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+;defb 	%10000101,128+	1			; Sprite 1 Frame animater
+;defb 	%10010000+15,2				; Save Object settings to Bank 2
+
+; Skull bomber
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%00100000+22,&23,%11000000+4	; Program - Fire Down Fast... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	37			; Sprite 1 Frame animater
+defb 	%10010000+15,3				; Save Object settings to Bank 2
+
+; Ant Attacker
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%01100000+1,&23,%11000000+4	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	0			; Sprite 1 Frame animater
+defb 	%10010000+15,4				; Save Object settings to Bank 2
+
+; Skeleton Crawler
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%10000000+11,&22,%11000000+3	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	36			; Sprite 1 Frame animater
+defb 	%10010000+15,5				; Save Object settings to Bank 5
+
+; SpliceFace
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%10000000+13,&25,%11000000+4	; Program - Starburst ... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	34			; Sprite 1 Frame animater
+defb 	%10010000+15,6				; Save Object settings to Bank 6
+
+; BoniBurd
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%10000000+2,&22,%11000000+3	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	2			; Sprite 1 Frame animater
+defb 	%10010000+15,7	
+
+; Skull Gang
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%00100000+16,%10100001,%11000000+3	; Program - Fire Left... Move - wave 10101100 ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	35			; Sprite 1 Frame animater
+defb 	%10010000+15,8	
+
+; Eyeclopse
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	128+4,%01100000+11,%10101100,%11000000+3	; Program - Fire Left... Move - wave 10101100 ... Hurt by bullets, hurts player, life 4
+defb 	%10000101,128+	7			; Sprite 1 Frame animater
+defb 	%10010000+15,9	
+
+;Add To Background
+defb 0,134			
+
+
+;defb 0,128+1,1				; Program / bitshift sprite
+;moon
+;defb 0,128,%11001000,0			; Move 	  / dir Left Slow ... Life - immortal
+defb 0,128+4,1,%11001000,0			; Program - Bitshift Sprite... Move - dir Left Slowest ... Life - immortal
+defb 0,0,	3,24+ 160 -16 ,24+ 8		; single sprite
+
+
+;Castle
+defb 0,128,%11000010,0			; Move 	  / dir Left Slow ... Life - immortal
+;defb 0,0,	12,24+ 120+5  ,24+ 30+50		; single sprite
+;defb 0,0,	12,24+ 129+5  ,24+ 30+50		; single sprite
+defb 0,0,	4,24+ 120  ,24+ 40		; single sprite
+defb 0,0,	5,24+ 132  ,24+ 40		; single sprite
+
+
+defb 0,0,	14,24+ 100  ,24+ 40+80		; single sprite
+ifndef buildZXS
+	defb 0,0,	15,24+ 152  ,24+ 40+80		; single sprite
+endif
+
+defb 0,0,	13,24+ 90  ,24+ 40+100		; single sprite
+defb 0,0,	13,24+ 162  ,24+ 40+100		; single sprite
+
+;Burning bloke
+defb 0,%01110000+3			; 3 commands at the same timepoint
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	129,0					; Change to program 0 (normal)
+defb 	0,128+	11,50+24,90+24	; 	; Single Object sprite 11 (animated)
+
+
+
+
+
+;Clouds (3 wide)
+defb 0,%01110000+6			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	128+4,0,%11000100,0			; Move 	  / dir Left Slow ... Life - immortal
+defb 	0, 41,159+24,10+28	; 	; Single Object / 
+defb 	0, 42,159+24+12,10+28	; 	; Single Object / 
+defb 	0, 43,159+24+24,10+28	; 	; Single Object / 
+defb 	evtAddToForeground
+
+
+
+
+;Spikeyrock
+defb 0,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+0				; Load Settings from bank 0
+defb 	48+   2   ,24+ 100,24+24+ 128,24,		8,9 ; Three sprites, 
+;defb 	0,	8 ,24+ 110  ,24+ 128		; single sprite
+;defb 	0,	9 ,24+ 110  ,24+ 128+24		; single sprite
+;defb 	0,	10,24+ 110  ,24+ 128+24+24	; single sprite
+
+;defb 1,128,%10000111,0+0+2		; Seeker / Life 60, hurts player (64) and Hit by bullets (128)
+
+;defb 1,0,	128+01,110,110	; 
+;defb 3,0,	128+01,100,100
+
+;defb 5,128,&1c,128+64+ 64			; Move dir up
+
+
+
+;Enable the plus palette!!!!!!!!!!!!
+
+defb 1,evtReprogramPlusPalette,0,9*8
+	     ;0GRB
+	defb 25
+	defw &0000
+	defw &004C
+	defw &0CC0
+	defw &0FFB
+	defb 50
+	defw &0000
+	defw &000F
+	defw &0FF0
+	defw &0FFD
+	defb 75
+	defw &0000
+	defw &002B
+	defw &0BB4
+	defw &0FFF
+	defb 100
+	defw &0000
+	defw &0059
+	defw &0998
+	defw &0EFF
+	defb 125
+	defw &0000
+	defw &0077
+	defw &088F
+	defw &0EFF
+	defb 150
+	defw &0000
+	defw &0088
+	defw &090F
+	defw &0EFF
+	defb 175
+	defw &0000
+	defw &00B4
+	defw &0A0A
+	defw &0FCF
+	defb 200
+	defw &0000
+	defw &00F4
+	defw &0A0B
+	defw &0FBF
+	     ;0GRB
+
+ifdef buildCPC
+	defb 1,evtCallAddress
+	defw	 EnablePlusPalette
+endif
+
+
+
+;Palette Change
+defb 1,%01110000+4			; 4 Commands
+	defb 240,0,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&44,&40
+
+	defb 240,26*0+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 1
+	defb 1				
+	defb &54,&54,&44,&40	
+
+	defb 240,26*1+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 0
+	defb 1				
+	defb &54,&54,&44,&40		
+
+	defb 240,26*2+6,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&44,&40			
+
+
+
+
+
+;defb 1,evtSetObjectSize,128 ;object size test
+
+
+
+
+
+
+
+; Load Palette
+
+	defb 2,%01110000+4			; 4 Commands
+	defb 240,0,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&55,&4A,&4B		;Black,DkBlue,LtYellow,White
+
+	;defb 0,240,6,6			; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 5
+	;defb 1				
+	;defb &54,&55,&43,&4B		;Black,DkBlue,LtYellow,White
+
+	defb 240,26*0+6,5*2+1		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 2	; Switches
+	defb 16	;delay			
+	defb &54,&5D,&59,&4B
+	defb 16	;delay			
+	defb &54,&58,&5F,&4B
+
+
+
+	defb 240,26*1+6,1		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 0
+
+	defb 240,26*2+6,5*2+1		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 2 ; no of switches
+	defb 0	;delays			
+	defb &54,&58,&53,&4B		;Black,Red,Grey,White
+	defb 32
+	defb &54,&4C,&53,&4B	 ;5b	
+	
+	
+	;defb 1				
+	;defb &54,&4C,&56,&4B
+ifdef buildCPC
+	defb 2,evtCallAddress
+	defw RasterColorsStartPalleteFlip
+endif
+
+; rock chick enemy
+defb 5,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+
+
+;defb 5,128+1,%00100000+10			; Starbursts
+;defb 5,0,	128+01,150,24+180	
+
+;defb 6,128+1,1				; Program / bitshift sprite
+;defb 6,128,%11001000,0			; Move 	  / dir Left Slow ... Life - immortal
+;defb 6,128,%11100000,0			; Move 	... Life - immortal
+;defb 6,0,	04,110,110	; 	; Single Object / 
+
+; Rock Pt 1
+defb 10,%01110000+3			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank 0
+defb 	0,	22,160+24,172+28	; 	; Single Object / 
+
+;Cross
+defb 13,%01110000+3			; 3 commands at the same timepoint
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	0,17,160+24,110+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+; rock chick enemy
+defb 15,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+
+; Rock Pt 2
+defb 16,%01110000+4			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank 0
+defb 	0,	23,160+24,172+28	; 	; Single Object / 
+defb 	evtAddToForeground
+
+; Powerup Rate
+defb 17,%01110000+2			; 2 commands at the same timepoint
+defb 	128+4,3,&22,64+63	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	0,128+ 39,160+24,50+24	; 	; Single Object sprite 11 (animated)
+
+
+; Rock Pt 3
+defb 22,%01110000+4			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank 0
+defb 	0,	24,160+24,172+28	; 	; Single Object / 
+defb 	evtAddToForeground
+
+
+
+; Powerup Fire
+;defb 23,%01110000+2			; 2 commands at the same timepoint
+;defb 	128+4,3,&22,64+8	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+;defb 	0,128+ 40,160+24,50+24	; 	; Single Object sprite 11 (animated)
+
+
+;animator test
+
+defb 25,evtSetAnimatorPointers
+defw	AnimatorPointers
+defb 25,evtSetAnimator,1
+
+
+; rock chick enemy
+defb 25,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+;; rock chick enemy
+defb 30,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+; rock chick enemy
+defb 35,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+;Cross
+defb 40,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	0,18,160+24,85+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+
+
+;Skull Bomber
+defb 45,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+3				; Load Settings from bank 3
+defb 	0+3				; Row 16, last Column, Last Sprite
+
+;Ant
+defb 45,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+4				; Load Settings from bank 4
+defb 	0+12				; Row 16, last Column, Last Sprite
+
+
+
+;Burning bloke
+defb 55,%01110000+5			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	129,0					; Change to program 0 (normal)
+defb 	0,128+	11,160+24,90+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+
+; Boniburd
+defb 65,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+7				; Load Settings from bank 5
+defb 	evtSingleSprite,TwoFrameSprite+	2,160+24-24,24+16
+
+;  SpikyRock
+defb 67,%01110000+4			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank 0
+defb 	48+   3   ,160+24,24+ 128,24,		8,9,10 ; Three sprites, 
+defb 	evtAddToForeground
+
+; rock enemy
+;defb 70,%01110000+3			; 2 commands at the same timepoint
+;defb 	%10010000+0+2				; Load Settings from bank 2
+;defb 	0+6				; Row 16, last Column, Last Sprite
+;defb 	0+10				; Row 16, last Column, Last Sprite
+
+; rock chick enemy
+defb 75,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+; rock chick enemy
+defb 80,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+
+; boniburd
+defb 84,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+7				; Load Settings from bank 5
+defb 	evtSingleSprite,TwoFrameSprite+	2,160+24-24,24+16
+
+;Skeleton walker
+defb 85,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+5				; Load Settings from bank 5
+defb 	0+13				; Row 16, last Column, Last Sprite
+
+
+
+;Cross
+defb 88,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	0,18,160+24,85+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+; Powerup Drone
+defb 90,%01110000+2			; 2 commands at the same timepoint
+defb 	128+4,3,&22,64+63	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	0,128+ 38,160+24,150+24	; 	; Single Object sprite 11 (animated)
+
+
+
+;Grave
+defb 95,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank
+defb 	0,21,160+24,170+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+; SpliceFace
+defb 100,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+6				; Load Settings from bank 6
+defb 	0,128+34,24,100+24	; 	; Single Object / 
+
+
+
+; rock chick enemy
+defb 110,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+; rock chick enemy
+defb 115,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+
+;Clouds (3 wide)
+defb 120,%01110000+6			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	128+4,0,%11000100,0			; Move 	  / dir Left Slow ... Life - immortal
+defb 	0, 41,159+24,10+28	; 	; Single Object / 
+defb 	0, 42,159+24+12,10+28	; 	; Single Object / 
+defb 	0, 43,159+24+24,10+28	; 	; Single Object / 
+defb 	evtAddToForeground
+
+
+
+; rock chick enemy
+defb 120,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+;Grave
+defb 122,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank
+defb 	0,21,160+24,170+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+; rock chick enemy
+defb 125,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+; rock chick enemy
+defb 127,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+
+;Burning bloke
+defb 129,%01110000+3			; 3 commands at the same timepoint
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	129,0					; Change to program 0 (normal)
+defb 	0,128+	11,160+24,90+24	; 	; Single Object sprite 11 (animated)
+
+
+; rock chick enemy
+defb 130,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+; rock chick enemy
+defb 135,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+
+
+;Cross
+defb 140,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	0,19,160+24,103+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+; SpliceFace
+defb 150,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+6				; Load Settings from bank 6
+defb 	0,128+34,24,100+24	; 	; Single Object / 
+
+; Powerup Drone
+defb 150,%01110000+2			; 2 commands at the same timepoint
+defb 	128+4,3,&22,64+63	; Program - Bitshift Sprite... Move - dir Left Slow ... Hurt by bullets, hurts player, life 4
+defb 	0,128+ 38,160+24,150+24	; 	; Single Object sprite 11 (animated)
+
+
+
+; Eyeclopse s
+defb 160,%01110000+4			; 2 commands at the same timepoint
+defb 	%10010000+0+9				; Load Settings from bank 5
+defb 	0+7	
+defb 	131,%10101111				; change Move
+defb 	0+12	
+
+; rock chick enemy
+defb 165,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+
+
+;Grave
+defb 167,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank
+defb 	0,20,160+24,173+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+; rock chick enemy
+defb 170,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+8				; Row 16, last Column, Last Sprite
+
+
+; Eyeclopse s
+defb 180,%01110000+4			; 2 commands at the same timepoint
+defb 	%10010000+0+9				; Load Settings from bank 5
+defb 	0+7	
+defb 	131,%10101111				; change Move
+defb 	0+12	
+
+;Cross
+defb 185,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+1				; Load Settings from bank 1
+defb 	0,19,160+24,107+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+; Skull Gang
+defb 190,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+8				; Load Settings from bank 5
+defb 	0+7	
+
+
+;Clouds (3 wide)
+defb 200,%01110000+6			; 2 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	128+4,0,%11000100,0			; Move 	  / dir Left Slow ... Life - immortal
+defb 	0, 41,159+24,10+28	; 	; Single Object / 
+defb 	0, 42,159+24+12,10+28	; 	; Single Object / 
+defb 	0, 43,159+24+24,10+28	; 	; Single Object / 
+defb 	evtAddToForeground
+
+
+
+; rock chick enemy
+defb 200,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+2				; Load Settings from bank 2
+defb 	0+6				; Row 16, last Column, Last Sprite
+defb 	0+10				; Row 16, last Column, Last Sprite
+
+
+; boniburd
+defb 220,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+7				; Load Settings from bank 5
+defb 	evtSingleSprite,TwoFrameSprite+	2,160+24-24,24+16
+
+;Skeleton walker
+defb 220,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+5				; Load Settings from bank 5
+defb 	0+13				; Row 16, last Column, Last Sprite
+
+
+;Grave
+defb 221,%01110000+4			; 3 commands at the same timepoint
+defb 	evtAddToBackground
+defb 	%10010000+0+0				; Load Settings from bank
+defb 	0,20,160+24,176+24	; 	; Single Object sprite 11 (animated)
+defb 	evtAddToForeground
+
+
+;Skull Bomber
+defb 225,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+3				; Load Settings from bank 3
+defb 	0+3				; Row 16, last Column, Last Sprite
+
+;Ant
+defb 225,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+4				; Load Settings from bank 4
+defb 	0+12				; Row 16, last Column, Last Sprite
+
+
+
+
+; SpliceFace
+defb 230,%01110000+4			; 2 commands at the same timepoint
+defb 	%10010000+0+6				; Load Settings from bank 6
+defb    %10000011,&23			; Change Move
+defb 	0,128+34,24,50+24	; 	; Single Object / 
+defb 	0,128+34,24,150+24	; 	; Single Object / 
+
+
+
+; SpliceFace
+defb 232,%01110000+3			; 2 commands at the same timepoint
+defb 	%10010000+0+6				; Load Settings from bank 6
+defb 	0,128+34,24,50+24	; 	; Single Object / 
+defb 	0,128+34,24,150+24	; 	; Single Object / 
+
+
+;Skull Bomber
+defb 235,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+3				; Load Settings from bank 3
+defb 	0+3				; Row 16, last Column, Last Sprite
+
+;Ant
+defb 235,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+4				; Load Settings from bank 4
+defb 	0+12				; Row 16, last Column, Last Sprite
+
+;Skull Bomber
+defb 245,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+3				; Load Settings from bank 3
+defb 	0+3				; Row 16, last Column, Last Sprite
+
+;Ant
+defb 245,%01110000+2			; 2 commands at the same timepoint
+defb 	%10010000+0+4				; Load Settings from bank 4
+defb 	0+12				; Row 16, last Column, Last Sprite
+
+
+
+defb 250,%01110000+2			; 2 commands at the same timepoint
+defb 	128+4,0,%11000100,0			; Move 	  / dir Left Slow ... Life - immortal
+defb 	0, 43,160+24,10+28	; 	; Single Object / 
+
+
+
+defb 5,%10001001			;Call a memory location
+defw	ClearBadguys
+;Palette Change
+LevelEndAnim:
+defb 5,%01110000+2			; 3 commands at the same timepoint
+defb evtSetProgMoveLife,prgMovePlayer,&24,10
+defb 	0,128+	20,140+24,100+24	; 	; Single Object sprite 11 (animated)
+
+;Palette Change
+defb 6,%01110000+4			; 4 Commands
+	defb 240,0,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&44,&40
+
+	defb 240,26*0+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 1
+	defb 1				
+	defb &54,&54,&44,&40	
+
+	defb 240,26*1+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 0
+	defb 1				
+	defb &54,&54,&44,&40		
+
+	defb 240,26*2+6,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&44,&40			
+
+
+
+
+defb 7,%01110000+4			; 4 Commands
+	defb 240,0,6				; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&54,&54	
+
+	defb 240,26*0+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 1
+	defb 1				
+	defb &54,&54,&54,&54		
+
+	defb 240,26*1+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 21*2+5
+	defb 0
+	defb 1				
+	defb &54,&54,&54,&54		
+
+	defb 240,26*2+6,6		; (Time,Cmd,Off,Bytes) load 5 bytes into the palette Offset 0
+	defb 1
+	defb 1				
+	defb &54,&54,&54,&54		
+
+defb 8,evtCallAddress			;Call a memory location
+defw	EndLevel
+
+
+EndLevel:
+	pop hl	;
+	ld hl,	&0102 				;load level 2
+	jp	Akuyou_ExecuteBootStrap	; Start the game, no return
+
+; stream examples
+
+; Three Linked Background objects
+;defb 1,128+1,1				; Program / bitshift sprite
+;defb 1,128,%11000010,0			; Move 	  / dir Left Slow ... Life - immortal
+;defb 10,0,	22,110,111	; 	; Single Object / 
+;defb 22,0,	23,110,111	; 	; Single Object / 
+;defb 34,0,	24,110,111	; 	; Single Object / 
+
+
+
+
+; Three Linked Background objects Faster
+;defb 1,128+1,1				; Program / bitshift sprite
+;defb 1,128,%11000001,0			; Move 	  / dir Left Slow ... Life - immortal
+;defb 10,0,	22,160+24,175+24	; 	; Single Object / 
+;defb 16,0,	23,160+24,175+24	; 	; Single Object / 
+;defb 22,0,	24,160+24,175+24	; 	; Single Object / 
+null: ret
+
+
+
+
+
+
+LevelInit:
+
+	ifdef buildMSX
+		ld hl,MSXTiles	
+		ld de,MSXTiles_End
+		ld bc,MSXTiles_End-MSXTiles	
+		ld ix,&0000
+		ld iy,MsxTilesPos
+		call Akuyou_VDP_RLEProcessorFromMemoryAgain	
+	endif
+
+
+	; wipe our memory, to clear out any junk from old levels
+;	ld de,LevelOrigin+1
+;	ld hl,LevelOrigin
+;	ld bc,&5FF
+;	ld (hl),0
+;	ldir 
+
+
+;	ld a, StarArraySize
+;	ld hl,StarArrayPointer
+;	call AkuYou_StarArrayInit_Enemy 
+
+;	ld a, PlayerStarArraySize
+;	ld hl,PlayerStarArrayPointer
+;	call AkuYou_StarArrayInit_Player 
+
+;	ld a,ObjectArraySize
+;	ld hl,ObjectArrayPointer
+;	call AkuYou_ObjectArray_Init
+
+
+
+ifdef buildCPC
+		call AkuYou_Player_GetPlayerVars
+		ld a,(iy-5)
+		ld hl,null
+		cp 64
+		jp nz,LevelInitUsingRasterFlip
+		ld (DisablePaletteSwitcher_Plus2-2),hl
+	LevelInitUsingRasterFlip:
+		call RasterColorsSetPalette1
+endif 
+
+ifdef buildMSX
+
+	ld hl,MsxPalette
+	call Akuyou_VDP_SetPalette
+endif 
+
+
+ifdef buildZXS
+
+
+	ld hl,&F800
+	ld de,&F800
+	ld bc,&0800
+	ld IXH,7
+	ld IXL,Akuyou_LevelStart_Bank
+	call Akuyou_Bankswapper_Copy
+	ei
+	;HL=Source Pos
+	;DE=Dest Post
+	;IXL= Source Bank
+	;IXH= Dest Bank
+	;BC= ByteCount
+endif
+
+
+
+
+;	ld a,1
+;	ld bc,RasterColors_ColorArray1
+;	ld de,RasterColors_ColorArray2
+;	ld hl,RasterColors_ColorArray3
+;	ld ix,RasterColors_ColorArray4
+;	ld iy,null
+;	call Akuyou_RasterColors_SetPointers
+
+
+
+	ld hl,EventStreamArray		;Event Stream
+	ld de,Event_SavedSettings	;Saved Settings
+	call AkuYou_Event_StreamInit
+
+ifdef buildZXS
+	ld a,6
+	ld hl,Akuyou_Music_Restart
+	call Akuyou_Bankswapper_CallHL
+else
+	call Akuyou_Music_Restart
+endif
+	
+
+;	ld hl, LevelSprites	
+;	ld de, Akuyou_PlayerSpritePos
+;	call AkuYou_SpritePointerInit
+
+
+
+	call Akuyou_ScreenBuffer_Init
+ifdef buildCPC
+;	ld (BackgroundFloodFillQuad_Minus1+1),hl
+	ld (BackgroundFloodFillQuadSprite_Minus1+1),hl
+	ld (BackgroundSolidFillNextLine_Minus1+1),hl
+endif
+	call Akuyou_Interrupt_Init	;	call Akuyou_RasterColors_Init
+	call AkuYou_Player_GetPlayerVars
+	push iy
+	pop hl
+	ld de,-6
+	add hl,de
+	ld (TimerPos_Plus2-2),hl
+
+	;call RasterColors_Reset
+LevelLoop:
+	ld hl,(TimerPos_Plus2-2)
+	ld a,(hl)
+	ld (Timer_Last_Plus1-1),a
+	ld a,10
+	ld (Lpos_Plus1-1),a
+	;ld l,&0e
+;	call Timer_Stop
+	;ld a,"F"
+	;call &bb5a 
+
+;	ifdef Debug
+;		call Timer_Start
+;	endif
+	;halt
+	;call Akuyou_Background_Clear
+
+;	ifdef Debug
+;		call Timer_Stop
+;	endif
+
+
+
+ifdef buildZXS
+	ld a,7	
+	ld hl,Background_Draw
+	call Akuyou_Bankswapper_CallHL
+else
+	call Background_Draw
+endif
+
+ifdef buildZXS
+	call Akuyou_INT_Force
+endif
+
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'B'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+	call Akuyou_EventStream_Process
+;
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'E'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+ifdef buildZXS
+	call Akuyou_INT_Force
+endif
+
+ifdef buildMSX
+	call Background_DrawMsx2
+endif
+
+	call Akuyou_ObjectArray_Redraw
+
+
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'O'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+	;halt
+
+
+ifdef buildZXS
+	call Akuyou_INT_Force
+endif
+
+ifdef buildZXS
+	ld a,7	
+	ld hl,Akuyou_Player_Handler
+	call Akuyou_Bankswapper_CallHL
+else
+	call Akuyou_Player_Handler
+endif
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'P'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+ifdef buildZXS
+	ld a,7	
+	ld hl,Akuyou_StarArray_Redraw
+	call Akuyou_Bankswapper_CallHL
+else
+	call Akuyou_StarArray_Redraw
+endif
+
+	
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'S'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+ifdef buildZXS
+	ld a,7	
+	ld hl,AkuYou_Player_StarArray_Redraw
+	call Akuyou_Bankswapper_CallHL
+else
+	call AkuYou_Player_StarArray_Redraw
+endif
+ifdef buildZXS
+	call Akuyou_INT_Force
+endif
+
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'5'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+ifdef buildZXS
+	ld a,7	
+	ld hl,AkuYou_Player_DrawUI
+	call Akuyou_Bankswapper_CallHL
+else
+	call AkuYou_Player_DrawUI
+endif
+
+
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'U'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+;	call ShowBossText
+
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'B'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+	call Akuyou_PlaySfx
+
+;	ifdef Debug
+;		call Timer_Stop
+;		ld a,'X'
+;		call Akuyou_DrawText_CharSprite
+;	endif
+
+;	ifdef Debug_ShowLevelTime
+;		call ShowLevelTime
+;	endif
+
+	call Akuyou_ScreenBuffer_Flip
+ifdef buildCPC
+	ld (BackgroundSolidFillNextLine_Minus1+1),hl
+	ld (BackgroundFloodFillQuadSprite_Minus1+1),hl
+;	ld (GetNextLineTileLoopCheckB_Minus1+1),hl
+endif 
+
+ifdef buildZXS
+	ei
+	call Akuyou_INT_Force
+endif
+
+	jp LevelLoop
+
+LevelShutdown:
+
+ClearBadguys:
+ifdef buildCPC
+	ld a,64
+	ld (PaletteNo_Plus1-1),a	; turn off the alternate palette
+endif
+	ld a,1
+	ld i,a
+	push hl
+	call Akuyou_DoSmartBombCall
+	pop hl
+ret
+
+;;;;;;;;;;;;;;;;;;;Debugging Tools ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Timer_Stop:
+
+	ld a,2		;Remember to set the font!
+	call Akuyou_SpriteBank_Font
+;	ret
+	ld h,&03
+	ld l,&10 :Lpos_Plus1
+	ld a,l
+	inc a
+	ld (Lpos_Plus1-1),a
+	call Akuyou_DrawText_LocateSprite ; set location
+	;call &BD0D ;KL_TIME_PLEASE
+
+	ld a,(&0000):TimerPos_Plus2
+	push af
+		sub 0 :Timer_Last_Plus1
+		call ShowHex
+	pop af
+	ld (Timer_Last_Plus1-1),a
+	ret
+
+
+ShowLevelTime:
+
+	ld a,2		;Remember to set the font!
+	call Akuyou_SpriteBank_Font
+
+	ld hl,&1001
+	call Akuyou_DrawText_LocateSprite
+
+	call Akuyou_GetLevelTime
+	push bc	
+	call ShowHex
+	pop bc
+	ld a,b
+	call ShowHex
+ret
+
+
+ShowHex:
+
+
+	push af         ;store original byte value
+		rrca            
+		rrca
+		rrca
+		rrca
+		call DrawText_PrintHexDigit
+	pop af          ;retrieve original byte value
+
+DrawText_PrintHexDigit:
+	;	and %00001111   ;isolate lower nibble. (This contains the digit value 0...15)
+	;	add a,"0"       ;add ASCII for 0. Digits 0...9 become "0"..."9", digits 10..15
+	;	cp "9"+1        
+	;	jr c,ShowHexDigitNum     ;if number is in digit range 0...9, display digit
+	;	add a,"A"-"9"-1 ;modify ASCII value so that digits in the range 10...15
+	and %00001111   ;isolate lower nibble. (This contains the digit value 0...15)
+	cp &a           ;Less than 10?  Set carry if so
+	sbc a,&69
+	daa             ;Because previous instruction was a subtract operation this
+                ;is known as 'das' in x86
+DrawText_PrintHexDigitNum:
+	jp Akuyou_DrawText_CharSprite   ;display digit
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+ifdef buildCPC
+
+EnablePlusPalette:
+push hl
+	call Akuyou_EnablePlusPalette
+pop hl
+
+ret
+
+
+
+RasterColorsStartPalleteFlip:
+	push iy
+		call AkuYou_Player_GetPlayerVars
+		ld a,(iy-5)
+		cp 64
+	pop iy
+	ret z
+
+	xor a
+ 	ld (PaletteNo_Plus1-1),a
+ret
+
+RasterColorsSetPalette1:
+	ld a,1
+	ld bc,RasterColors_ColorArray1
+	ld de,RasterColors_ColorArray2
+	ld hl,RasterColors_ColorArray3
+	ld ix,RasterColors_ColorArray4
+	ld iy,PaletteSwitcher :DisablePaletteSwitcher_Plus2
+jp Akuyou_RasterColors_SetPointers
+
+PaletteSwitcher:
+	ld a,64:PaletteNo_Plus1
+	cpl	
+	ld (PaletteNo_Plus1-1),a
+	or a
+	jp nz,RasterColorsSetPalette1
+RasterColorsSetPalette2:
+	ld a,1
+	ld bc,RasterColors_ColorArray1Alt
+	ld de,RasterColors_ColorArray2Alt
+	ld hl,RasterColors_ColorArray3Alt
+	ld ix,RasterColors_ColorArray4Alt
+	ld iy,PaletteSwitcher
+jp Akuyou_RasterColors_SetPointers
+
+
+
+
+
+RasterColors_ColorArray1:
+	defb 1
+	defb 1
+	defb 64+20,64+24,64+29,64+11
+RasterColors_ColorArray2:
+	defb 5
+	defb 1
+
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+24,64+29,64+11
+	defb 12
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+24,64+29,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+RasterColors_ColorArray3:
+	defb 1
+	defb 1
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+RasterColors_ColorArray4:
+	defb 1
+	defb 1 
+	defb 64+20,64+31,64+14,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+31,64+14,64+11
+	defb 0
+	defb 64+20,64+12,64+13,64+11
+	defb 0
+	defb 64+20,64+31,64+14,64+11
+
+
+
+
+
+endif
+
+
+
+
+ifdef BuildCPC
+	read "CoreBackground_SolidFill.asm"
+	read "CoreBackground_QuadSprite.asm"
+	read "CoreBackground_bitshifter.asm"
+	read "CoreBackground_GetSpriteMemPos.asm"
+endif
+;read "CoreBackground_Quad.asm"
+;read "CoreBackground_TileArray.asm"
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; This block is copied to bank 7 on the speccy, and contains graphics for the background
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+AlignedBlock:
+	defs FileBeginLevel+&3800-AlignedBlock
+
+LevelTiles:
+ifdef BuildCPC
+	incbin "..\ResCPC\Level01-Tiles.SPR"
+endif
+ifdef BuildZXS
+	incbin "..\ResZX\Level01-Tiles.TSP"
+endif
+
+
+
+
+
+ifdef buildMSX
+Background_DrawMsx2:
+nop
+		ld hl,MSXTileList
+		ld de,MSXTileListV9990
+		call Akuyou_Background_Tiles
+ret
+endif
+
+
+Background_Draw: 
+	ld a,0	;0=left 1=right ;2=static
+	call Akuyou_Background_GradientScroll
+
+	call Akuyou_Timer_UpdateTimer
+
+
+ifndef BuildMSX
+	push af	; need to keep the smartbomb color
+
+
+		ifdef buildCPC
+			call Akuyou_Timer_GetTimer
+			ld (BitshifterTicksOccured_Plus1-1),a
+		endif
+
+		call Akuyou_ScreenBuffer_GetActiveScreen
+		ld h,a
+		ifdef buildCPC
+			ifdef CPC320
+				ld l,&4F+1
+			else
+				ld l,&40
+			endif
+		endif
+		ifdef buildZXS
+			ld l,&1F	;intentionaly one too low - to avoid problems with nextline on byte boundaries
+		endif 
+	pop af
+
+endif
+	or a
+	jp nz,Background_SmartBomb
+ifdef BuildMSX
+	ld (Background_DrawMsx2),a	;nop to disable 2nd background
+endif
+
+;ifndef buildZXS
+;ifndef buildMSX
+
+;	call AkuYou_Player_GetPlayerVars
+;	ld a,(iy-8)	;Backgrounds can be disabled for a speedup
+;	and %00000100
+;	jp nz,Background_Black
+;endif
+;endif
+
+
+
+	jp Background_DrawB :BacgroundRender_Plus2
+
+Background_DrawB: 
+;	ifdef CPC320
+;		GradientTopStart equ 200-8
+;	else
+;		GradientTopStart equ 192-8
+;	endif
+;
+ifdef buildMSX
+		ld de,NewGradient
+		ld hl,NewGradientV9990
+		ld b,192
+;		ld c,%11111111
+		jp Akuyou_Background_Gradient
+endif
+
+ifndef buildMSX
+	GradientTopStart equ 48
+	ld de,GradientTop
+	ld b,GradientTopStart
+	ld c,%11111100		;Shift on Timer Ticks
+
+	call Akuyou_Background_Gradient
+
+
+
+
+
+	;Bottom
+	ld a,0
+	ld de,LevelTiles
+	ifdef buildZXS
+		call Akuyou_GetSpriteMempos
+	else
+		call GetSpriteMempos	
+	endif
+	push de
+
+		ld b,16 ;Lines
+
+		ifdef buildZXS
+			call Akuyou_BackgroundFloodFillQuadSprite ;need pointer to sprite in HL
+		else
+			call BackgroundFloodFillQuadSprite ;need pointer to sprite in HL
+		endif
+	
+			ld de,&0000
+			ld b,32
+			ifdef buildZXS
+				call Akuyou_BackgroundSolidFill ;need pointer to sprite in HL
+			else
+				call BackgroundSolidFill ;need pointer to sprite in HL
+			endif
+
+	pop de
+	push de
+
+		ex hl,de		;Move down 16 lines
+			ld bc,8*16
+			add hl,bc
+		ex hl,de
+		push de
+
+			ld b,16 ;Lines
+
+			ifdef buildZXS
+				call Akuyou_BackgroundFloodFillQuadSprite ;need pointer to sprite in HL
+			else
+				call BackgroundFloodFillQuadSprite ;need pointer to sprite in HL
+			endif
+	
+	
+
+				ld de,&0000
+			ifdef CPC320
+				ld b,200-48-16-32-16-8-32
+			else
+				ld b,192-48-16-32-16-8-32
+			endif
+			ifdef buildZXS
+				call Akuyou_BackgroundSolidFill ;need pointer to sprite in HL
+			else
+				call BackgroundSolidFill ;need pointer to sprite in HL
+			endif
+
+
+			GradientBottomStart equ 32
+			ld de,GradientBottom
+			ld b,GradientBottomStart
+			ld c,%11111111		;Shift on Timer Ticks
+			call Akuyou_Background_Gradient
+
+
+;	pop de	;Delete this after test
+
+			
+
+		pop de
+
+
+	ex hl,de		;Move down 16 lines
+		ld bc,8*16
+		add hl,bc
+	ex hl,de
+
+
+	ld b,8 ;Lines
+
+	ifdef buildZXS
+		call Akuyou_BackgroundFloodFillQuadSprite ;need pointer to sprite in HL
+	else
+		call BackgroundFloodFillQuadSprite ;need pointer to sprite in HL
+	endif
+	
+	
+
+
+	;ld a,1
+	;ld de,LevelTiles
+	;call GetSpriteMempos
+
+
+
+	pop de ;needed to keep this for the bitshifts
+
+
+
+	ld hl,0007 ; shift to the right of the sprite
+	add hl,de
+	ld a,%11111100 ;Shift on Timer Ticks
+	ld b,&8		; Bytes
+	ld c,16		;lines
+	ifdef buildZXS
+		call Akuyou_BitShifter ;need pointer to sprite in HL
+	else
+		call BitShifter ;need pointer to sprite in HL
+	endif
+
+
+	;must be byte aligned
+
+	ld a,%11111110 ;Shift on Timer Ticks
+	ld b,&8		; Bytes
+	ld c,16		;lines
+	ifdef buildZXS
+		call Akuyou_BitShifter ;need pointer to sprite in HL
+	else
+		call BitShifter ;need pointer to sprite in HL
+	endif
+
+	;must be byte aligned - otherwise recalc!
+;	ld a,2
+;	ld de,LevelTiles
+;	call GetSpriteMempos	
+;	ld hl,0007 ; shift to the right of the sprite
+;	add hl,de
+
+	inc h	;Bitshifter wraps on byte align, so manually recalc, or force a move every 32 lines
+
+	ld a,%11111111 ;Shift on Timer Ticks
+	ld b,&8		; Bytes
+	ld c,8		;lines
+	ifdef buildZXS
+		call Akuyou_BitShifter ;need pointer to sprite in HL
+	else
+		call BitShifter ;need pointer to sprite in HL
+	endif
+
+
+
+SpectrumBackgroundTest:
+	ifdef buildZXS
+		ld de,BackgroundColorMap
+		ld a,7	
+		ld hl,Akuyou_Background_Color
+		call Akuyou_Bankswapper_CallHL
+	endif
+
+ret
+endif
+
+Background_SmartBomb:
+ifdef buildMSX
+	ld a,d
+	and &44
+	ld d,a
+	ld e,d
+	ld (MSxSmartBombV9990),de
+	ld (MSxSmartBombV9990+2),de
+	ld (MSxSmartBombColor_Plus1-1),a
+	ld a,&C9
+	ld (Background_DrawMsx2),a	;nop to disable 2nd background	
+
+
+		ld de,MSxSmartBomb
+		ld hl,MSxSmartBombV9990
+		ld b,192
+;		ld c,%11111111
+		jp Akuyou_Background_Gradient
+endif
+ifndef 	buildMSX
+	ld e,d
+	jr Background_Fill
+Background_Black:
+	ld de,&0000
+Background_Fill:
+	ifdef CPC320
+		ld b,200
+	else
+		ld b,192
+	endif
+
+	ifdef buildZXS
+		jp Akuyou_BackgroundSolidFill
+	else
+		jp BackgroundSolidFill
+	endif
+
+endif
+
+
+
+
+
+;speccy gradient
+ifdef buildCPC
+GradientTop:
+	defb &F0,&F0	;1; first line
+	defb GradientTopStart-10,&D0	;2; line num, New byte
+	defb GradientTopStart-16,&70	;3
+	defb GradientTopStart-20,&A0	;4
+	defb GradientTopStart-26,&50	;5
+	defb GradientTopStart-30,&80	;6
+	defb GradientTopStart-36,&20	;7
+	defb GradientTopStart-40,&00	;8
+	defb GradientTopStart-46,&00	;9
+	defb 255
+
+GradientBottom:
+	defb &0,&0	;1; first line
+	defb 26,&20	;10
+	defb 22,&80	;11
+	defb 18,&50	;12
+	defb 14,&A0	;13
+	defb 10,&70	;14
+	defb 6,&D0	;15
+	defb 4,&F0	;15
+	defb 2,&F0	;15
+	defb 255
+endif 
+
+
+
+
+
+
+
+
+
+ifdef buildZXS
+
+
+GradientTop:
+	defb %11111111,%11111111	;1; first line
+	defb GradientTopStart-10,%11101110	;2; line num, New byte
+	defb GradientTopStart-16,%01010101
+	defb GradientTopStart-20,%10100010	;4
+	defb GradientTopStart-26,%01001000
+	defb GradientTopStart-34,%00000001
+	defb GradientTopStart-40,&00	;9
+	defb GradientTopStart-46,&00	;9
+	defb 255
+
+GradientBottom:
+	defb &0,&0	;1; first line
+	defb 26,%00010000
+	defb 20,%01000100	;16
+	defb 16,%10100010	;17
+	defb 10,%01010101	;18
+	defb 6, %11101110	;19
+	defb 4, %11111111;&0F	;20
+	defb 2, %11111111	;15
+	defb 255
+
+
+NewGradient:
+gradstart equ 0
+
+	defb %11111111,%11111111	;1; first line
+	defb gradstart-6, %11101110	;4
+	defb gradstart-12,%01010101	;5
+	defb gradstart-18,%10100010	;6
+	defb gradstart-24,%01000100	;7
+	defb gradstart-30,&00
+	defb gradstart-36,&00
+	defb 48,0
+	defb 44,%01000100	;16
+	defb 40,%10100010	;17
+	defb 36,%01010101	;18
+	defb 32,%11101110	;19
+	defb 28,%11111111;&0F	;20
+	defb 24,%11111111	;15
+	defb 20,%11101110	;15
+	defb 16,%01010101	;16
+	defb 12,%10100010	;17
+	defb 08,%01000100	;19
+	defb 04	,0	;20
+	defb 02	,0	;20
+	defb 255
+
+
+
+
+BackgroundColorMap:
+
+
+	defb 64+3
+	defb 64+2
+	defb 64+2
+	defb 64+2
+	defb 64+2
+	defb 64+2
+	defb 64+2
+	defb 64+2
+	defb 64+5
+	defb 64+5
+	defb 00+7
+	defb 00+7
+	defb 64+5
+	defb 64+5
+	defb 64+5
+	defb 64+5
+	defb 00+5
+	defb 00+5
+	defb 64+1
+	defb 64+1
+	defb 64+1
+	defb 64+1
+	defb 64+1
+	defb 64+1
+
+endif
+
+
+ifdef buildMSX
+MsxPalette:
+defb %00010000,%00000000;0  -RRR-BBB,-----GGG
+defb %00000000,%00000000;1  -RRR-BBB,-----GGG
+defb %00100010,%00000010;2  -RRR-BBB,-----GGG
+defb %01010101,%00000101;3  -RRR-BBB,-----GGG
+defb %01110111,%00000111;4  -RRR-BBB,-----GGG
+defb %01000100,%00000000;5  -RRR-BBB,-----GGG
+defb %00000111,%00000111;6  -RRR-BBB,-----GGG
+defb %01110000,%00000000;7  -RRR-BBB,-----GGG
+defb %00000010,%00000111;8  -RRR-BBB,-----GGG
+defb %01110110,%00000011;9  -RRR-BBB,-----GGG
+defb %01000000,%00000000;10  -RRR-BBB,-----GGG
+defb %01000111,%00000010;11  -RRR-BBB,-----GGG
+defb %01110000,%00000100;12  -RRR-BBB,-----GGG
+defb %00100111,%00000100;13  -RRR-BBB,-----GGG
+defb %01110101,%00000111;14  -RRR-BBB,-----GGG
+defb %01010011,%00000101;15  -RRR-BBB,-----GGG
+MSXTileListV9990:
+	defb 80,16
+	defw 	MsxTilesPos+16
+	defb 	%11111110,0
+	defb 184,8
+	defw 	MsxTilesPos+16+16
+	defb 	%11111111,0
+	defb 48,16
+	defw 	MsxTilesPos
+	defb 	%11111100,0
+	defb 0,0
+
+
+MSXTileList:
+	defb 64,16
+	defw 	MsxTilesPos+16
+	defb 	%11111110,0
+	defb 184,8
+	defw 	MsxTilesPos+16+16
+	defb 	%11111111,0
+	defb 16,16
+	defw 	MsxTilesPos
+	defb 	%11111100,0
+	defb 0,0
+
+	gradstart equ 192
+
+MSxSmartBombV9990:
+	defb &FF,&FF,&FF,&FF
+	defb 255
+MSxSmartBomb:
+
+	defb 0,192	,%00000000,&FF :MSxSmartBombColor_Plus1
+	defb 0,0
+
+NewGradient:
+	defb 0,16	,%11111100,&50
+	defb 160,24	,%11111111,&A0
+	defb 32,32	,%00000000,&00
+	defb 72,88	,%00000000,&00
+	defb 0,0
+
+NewGradientV9990:
+	defb &BB,&BB,&BB,&BB	;1; first line
+	defb gradstart-06, &BB,&B5	,%11111100
+	defb gradstart-10, &5B,&5B	,%11111100
+	defb gradstart-16, &B5,&55	,%11111100
+	defb gradstart-20 ,&55,&55	,%00000000
+
+	defb gradstart-26, &55,&50	,%11111100
+	defb gradstart-30, &05,&05	,%11111100
+	defb gradstart-36, &50,&00	,%11111100
+	defb gradstart-40 ,&00,&00	,%00000000
+	defb gradstart-50 ,&00,&00	,%00000000
+
+	defb 50, 		&A0,&00	,%11111111
+	defb 46, 		&0A,&0A	,%11111111
+	defb 40, 		&AA,&A0	,%11111111
+	defb 36	,		&AA,&AA	,%11111111
+
+	defb 30, 		&7A,&AA	,%11111111
+	defb 26, 		&A7,&A7	,%11111111
+	defb 20, 		&77,&7A	,%11111111
+	defb 16	,		&77,&77	,%11111111
+	defb 12	,		&77,&77	,%11111111
+	defb 255
+
+
+;	defb gradstart-10, &FF,&F0	,%11111100
+;	defb gradstart-20, &0F,&0F	,%11111100
+;	defb gradstart-30, &F0,&00	,%11111100
+;	defb gradstart-40,&00,&00	,%00000000
+;	defb gradstart-50,&00,&00	,%00000000
+;	defb 40, 		&F0,&00	,%11111111
+;	defb 30, 		&0F,&0F	,%11111111
+;	defb 20, 		&FF,&F0	,%11111111
+;	defb 10	,		&FF,&FF	,%11111111
+;	defb 02	,		&FF,&FF	,%11111111
+endif
+
+LevelJumpBlock:
+;ifdef buildCPC
+;	org Akuyou_LevelStart+ &3ff0
+;else
+	defs FileBeginLevel+&3FF0-LevelJumpBlock
+;endif
+
+
+
+jp LevelInit; - Level Start &3ff0
+jp LevelLoop; - Level loop &3ff3
+FileEndLevel:
+limit &FFFF
+ifdef  buildCPC
+	save direct "T10-SC1.D01",FileBeginLevel,FileEndLevel-FileBeginLevel	;address,size...}[,exec_address]
+endif
+

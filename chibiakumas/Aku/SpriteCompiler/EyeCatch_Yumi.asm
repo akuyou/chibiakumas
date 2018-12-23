@@ -1,0 +1,6797 @@
+read "../CoreDefs.asm"
+org &8000
+
+nolist
+FirstByte:
+jp PicEyeCatch_Yumipng
+jp GetDialog
+PicEyeCatch_Yumipng:
+ld hl,PicEyeCatch_Yumipng_rledata-1
+ld de,PicEyeCatch_Yumipng_rledataEnd-1
+ld b,0
+ld ixh,80
+ld IXL,79
+di
+exx 
+push bc
+exx
+jp RLE_Draw
+PicEyeCatch_Yumipng_rledata:
+
+defb &F,&ff,&ff,&e
+defb &31
+defb &11
+defb &F,&8e
+defb &21
+defb &32
+defb &11
+defb &F,&8d
+defb &31
+defb &73
+defb &11
+defb &F,&8b
+defb &31
+defb &B4
+defb &31
+defb &F,&5
+defb &31
+defb &2
+defb &11
+defb &F,&1
+defb &21
+defb &11
+defb &9
+defb &10,&3
+
+defb &21
+defb &4
+defb &11
+defb &F,&0
+defb &21
+defb &10,&9
+
+defb &11
+defb &A
+defb &21
+defb &11
+defb &2
+defb &31
+defb &F,&2d
+defb &20,&E,&DF
+defb &74
+defb &F,&4
+defb &31
+defb &2
+defb &31
+defb &F,&1
+defb &21
+defb &11
+defb &9
+defb &10,&3
+
+defb &21
+defb &4
+defb &31
+defb &F,&0
+defb &21
+defb &10,&9
+
+defb &11
+defb &A
+defb &21
+defb &20,&3,&E
+defb &F,&2c
+defb &A1
+defb &32
+defb &B2
+defb &F2
+defb &B2
+defb &11
+defb &F,&3
+defb &31
+defb &2
+defb &31
+defb &F,&1
+defb &21
+defb &11
+defb &9
+defb &20,&3,&6
+defb &3
+defb &31
+defb &F,&0
+defb &21
+defb &11
+defb &D
+defb &20,&7,&7
+defb &F,&2c
+defb &73
+defb &31
+defb &72
+defb &F1
+defb &73
+defb &C
+defb &21
+defb &30,&7,&8,&D
+
+defb &1
+defb &32
+defb &11
+defb &3
+defb &31
+defb &60,&9,&D,&8,&7,&8,&B
+
+defb &11
+defb &3
+defb &32
+defb &2
+defb &20,&3,&B
+defb &32
+defb &2
+defb &32
+defb &10,&1
+defb &32
+defb &2
+defb &10,&B
+
+defb &31
+defb &3
+defb &32
+defb &11
+defb &2
+defb &21
+defb &10,&1
+defb &20,&3,&3
+defb &30,&B,&1,&3
+defb &33
+defb &11
+defb &F,&2b
+defb &B4
+defb &31
+defb &B3
+defb &F1
+defb &B2
+defb &11
+defb &B
+defb &33
+defb &1
+defb &33
+defb &1
+defb &32
+defb &11
+defb &2
+defb &21
+defb &32
+defb &1
+defb &32
+defb &1
+defb &33
+defb &1
+defb &33
+defb &11
+defb &2
+defb &21
+defb &32
+defb &10,&9
+defb &33
+defb &21
+defb &32
+defb &2
+defb &32
+defb &10,&9
+defb &32
+defb &10,&9
+defb &33
+defb &2
+defb &21
+defb &10,&3
+
+defb &31
+defb &2
+defb &21
+defb &10,&9
+defb &35
+defb &21
+defb &20,&1,&3
+
+defb &21
+defb &32
+defb &F,&2b
+defb &73
+defb &F1
+defb &72
+defb &32
+defb &71
+defb &F1
+defb &72
+defb &31
+defb &A
+defb &20,&E,&C
+
+defb &11
+defb &33
+defb &2
+defb &31
+defb &3
+defb &20,&7,&7
+defb &30,&E,&6,&8
+defb &20,&D,&D
+
+defb &11
+defb &2
+defb &31
+defb &2
+defb &40,&B,&9,&3,&6
+defb &3
+defb &31
+defb &40,&C,&9,&B,&9
+
+defb &31
+defb &4
+defb &21
+defb &31
+defb &2
+defb &21
+defb &00,&3,&9
+defb &20,&B,&1
+
+defb &31
+defb &2
+defb &31
+defb &11
+defb &F,&2a
+defb &B3
+defb &F3
+defb &B1
+defb &32
+defb &B2
+defb &F1
+defb &10,&2F
+
+defb &11
+defb &9
+defb &21
+defb &33
+defb &20,&D,&C
+defb &2
+defb &31
+defb &3
+defb &30,&3,&6,&C
+
+defb &21
+defb &33
+defb &20,&D,&8
+
+defb &11
+defb &2
+defb &34
+defb &21
+defb &30,&1,&3,&6
+defb &3
+defb &31
+defb &10,&C
+defb &2
+defb &20,&B,&9
+
+defb &31
+defb &3
+defb &32
+defb &3
+defb &21
+defb &20,&9,&9
+defb &30,&1,&B,&1
+
+defb &31
+defb &2
+defb &31
+defb &11
+defb &F,&29
+defb &21
+defb &72
+defb &F4
+defb &73
+defb &31
+defb &10,&DF
+defb &72
+defb &31
+defb &C
+defb &31
+defb &20,&D,&C
+defb &2
+defb &31
+defb &3
+defb &20,&7,&7
+defb &10,&C
+defb &3
+defb &21
+defb &20,&D,&8
+
+defb &11
+defb &5
+defb &40,&B,&1,&3,&6
+defb &3
+defb &31
+defb &40,&C,&9,&B,&9
+
+defb &31
+defb &2
+defb &21
+defb &31
+defb &4
+defb &21
+defb &20,&9,&9
+defb &10,&1
+defb &20,&B,&B
+
+defb &31
+defb &2
+defb &31
+defb &11
+defb &F,&29
+defb &B2
+defb &F6
+defb &B2
+defb &31
+defb &B2
+defb &10,&BF
+
+defb &31
+defb &A
+defb &33
+defb &20,&C,&C
+
+defb &1
+defb &32
+defb &3
+defb &21
+defb &32
+defb &2
+defb &31
+defb &1
+defb &33
+defb &20,&C,&8
+
+defb &11
+defb &2
+defb &21
+defb &32
+defb &40,&9,&1,&B,&7
+defb &2
+defb &32
+defb &10,&8
+defb &32
+defb &20,&9,&9
+
+defb &31
+defb &2
+defb &21
+defb &10,&9
+
+defb &31
+defb &2
+defb &21
+defb &20,&9,&9
+defb &20,&1,&B
+defb &33
+defb &2
+defb &31
+defb &11
+defb &F,&28
+defb &10,&4E
+defb &F7
+defb &73
+defb &10,&4F
+
+defb &F1
+defb &72
+defb &A
+defb &21
+defb &10,&7
+defb &00,&3,&C
+
+defb &11
+defb &4
+defb &31
+defb &11
+defb &2
+defb &31
+defb &40,&8,&7,&C,&8
+
+defb &11
+defb &3
+defb &32
+defb &30,&8,&1,&B
+
+defb &31
+defb &3
+defb &10,&7
+defb &2
+defb &32
+defb &20,&8,&9
+
+defb &31
+defb &3
+defb &32
+defb &11
+defb &2
+defb &21
+defb &20,&9,&9
+defb &30,&1,&B,&9
+
+defb &11
+defb &2
+defb &31
+defb &11
+defb &F,&28
+defb &B2
+defb &F8
+defb &B2
+defb &31
+defb &B2
+defb &F1
+defb &10,&27
+defb &F,&7e
+defb &21
+defb &71
+defb &F3
+defb &72
+defb &F4
+defb &74
+defb &F2
+defb &10,&1F
+
+defb &11
+defb &F,&7d
+defb &B2
+defb &F4
+defb &B2
+defb &F4
+defb &B4
+defb &F1
+defb &B1
+defb &32
+defb &F,&7d
+defb &71
+defb &F4
+defb &73
+defb &F4
+defb &72
+defb &31
+defb &10,&DF
+defb &73
+defb &11
+defb &F,&7b
+defb &10,&AE
+defb &F5
+defb &B3
+defb &F4
+defb &20,&2F,&EF
+defb &20,&2F,&2F
+defb &F,&7b
+defb &10,&4E
+defb &F4
+defb &74
+defb &F4
+defb &73
+defb &F1
+defb &74
+defb &11
+defb &F,&18
+defb &10,&6
+defb &A
+defb &10,&E
+defb &F,&11
+defb &21
+defb &F,&24
+defb &B2
+defb &10,&BF
+defb &F3
+defb &B4
+defb &F4
+defb &31
+defb &B3
+defb &31
+defb &10,&BF
+
+defb &11
+defb &F,&18
+defb &10,&6
+defb &A
+defb &10,&E
+defb &F,&11
+defb &10,&6
+defb &F,&23
+defb &71
+defb &F2
+defb &72
+defb &F1
+defb &71
+defb &F2
+defb &72
+defb &F3
+defb &72
+defb &10,&CF
+defb &72
+defb &F1
+defb &72
+defb &F,&18
+defb &10,&6
+defb &A
+defb &10,&E
+defb &F,&11
+defb &10,&6
+defb &F,&21
+defb &10,&E
+defb &B2
+defb &F2
+defb &B2
+defb &10,&BF
+defb &F2
+defb &B2
+defb &F3
+defb &31
+defb &B2
+defb &10,&3F
+defb &F2
+defb &31
+defb &3
+defb &30,&6,&3,&E
+defb &4
+defb &50,&E,&1,&E,&9,&1
+
+defb &31
+defb &22
+defb &11
+defb &1
+defb &32
+defb &2
+defb &32
+defb &2
+defb &32
+defb &1
+defb &20,&6,&7
+defb &5
+defb &21
+defb &10,&7
+
+defb &21
+defb &32
+defb &11
+defb &30,&8,&7,&8
+defb &32
+defb &20,&8,&B
+
+defb &11
+defb &3
+defb &70,&3,&B,&9,&1,&3,&E,&8
+defb &32
+defb &F,&21
+defb &21
+defb &32
+defb &71
+defb &F4
+defb &73
+defb &F1
+defb &72
+defb &F2
+defb &72
+defb &31
+defb &73
+defb &F1
+defb &72
+defb &51
+defb &2
+defb &21
+defb &32
+defb &1
+defb &32
+defb &11
+defb &3
+defb &20,&3,&3
+defb &33
+defb &21
+defb &30,&1,&B,&7
+
+defb &21
+defb &32
+defb &11
+defb &20,&6,&6
+
+defb &21
+defb &32
+defb &11
+defb &21
+defb &33
+defb &5
+defb &31
+defb &10,&C
+
+defb &21
+defb &33
+defb &1
+defb &33
+defb &1
+defb &33
+defb &11
+defb &33
+defb &11
+defb &2
+defb &21
+defb &33
+defb &21
+defb &30,&9,&B,&3
+defb &32
+defb &10,&9
+defb &32
+defb &F,&21
+defb &21
+defb &32
+defb &B1
+defb &10,&7F
+defb &32
+defb &B4
+defb &F5
+defb &B1
+defb &30,&8F,&3F,&7F
+defb &32
+defb &3
+defb &21
+defb &20,&B,&B
+
+defb &31
+defb &4
+defb &21
+defb &60,&B,&1,&6,&B,&1,&7
+
+defb &31
+defb &2
+defb &31
+defb &2
+defb &50,&7,&6,&C,&E,&C
+defb &6
+defb &20,&E,&E
+defb &20,&C,&C
+defb &30,&8,&D,&8
+defb &20,&D,&D
+
+defb &11
+defb &2
+defb &21
+defb &20,&9,&B
+
+defb &11
+defb &32
+defb &21
+defb &40,&9,&B,&3,&6
+defb &F,&20
+defb &21
+defb &31
+defb &73
+defb &10,&7F
+defb &34
+defb &73
+defb &F4
+defb &71
+defb &31
+defb &72
+defb &35
+defb &4
+defb &20,&B,&1
+
+defb &31
+defb &3
+defb &32
+defb &10,&9
+defb &33
+defb &11
+defb &30,&B,&1,&7
+defb &34
+defb &1
+defb &32
+defb &1
+defb &21
+defb &33
+defb &20,&6,&C
+defb &5
+defb &32
+defb &11
+defb &20,&E,&C
+
+defb &1
+defb &33
+defb &10,&9
+defb &32
+defb &20,&D,&8
+
+defb &11
+defb &2
+defb &21
+defb &30,&1,&B,&D
+defb &22
+defb &40,&9,&1,&3,&6
+defb &F,&20
+defb &21
+defb &B2
+defb &31
+defb &B2
+defb &71
+defb &36
+defb &B3
+defb &F2
+defb &B4
+defb &35
+defb &11
+defb &3
+defb &20,&B,&B
+
+defb &31
+defb &2
+defb &21
+defb &11
+defb &5
+defb &40,&6,&E,&1,&6
+defb &3
+defb &31
+defb &10,&E
+defb &5
+defb &31
+defb &20,&E,&C
+defb &3
+defb &31
+defb &10,&C
+defb &2
+defb &20,&E,&C
+defb &3
+defb &21
+defb &11
+defb &2
+defb &21
+defb &20,&D,&8
+
+defb &11
+defb &2
+defb &21
+defb &20,&1,&3
+defb &32
+defb &50,&E,&9,&B,&3,&6
+defb &3
+defb &74
+defb &51
+defb &F,&18
+defb &21
+defb &20,&CF,&1F
+
+defb &71
+defb &F2
+defb &37
+defb &74
+defb &31
+defb &72
+defb &34
+defb &71
+defb &11
+defb &3
+defb &10,&3
+defb &32
+defb &11
+defb &3
+defb &20,&3,&3
+defb &33
+defb &1
+defb &10,&E
+defb &2
+defb &10,&6
+
+defb &21
+defb &32
+defb &11
+defb &20,&6,&E
+
+defb &21
+defb &32
+defb &11
+defb &21
+defb &33
+defb &3
+defb &31
+defb &20,&C,&C
+
+defb &21
+defb &33
+defb &1
+defb &33
+defb &1
+defb &33
+defb &20,&D,&8
+
+defb &11
+defb &2
+defb &21
+defb &40,&1,&3,&7,&E
+defb &2
+defb &32
+defb &20,&9,&7
+defb &3
+defb &F1
+defb &B3
+defb &11
+defb &F,&18
+defb &31
+defb &B2
+defb &10,&3F
+defb &B2
+defb &F3
+defb &36
+defb &B3
+defb &10,&8F
+defb &33
+defb &F3
+defb &B1
+defb &3
+defb &20,&3,&E
+defb &4
+defb &30,&E,&1,&E
+
+defb &11
+defb &2
+defb &31
+defb &2
+defb &10,&6
+
+defb &1
+defb &32
+defb &2
+defb &32
+defb &11
+defb &1
+defb &32
+defb &1
+defb &20,&6,&7
+defb &3
+defb &31
+defb &20,&8,&7
+defb &20,&6,&6
+defb &30,&8,&7,&8
+defb &32
+defb &20,&C,&8
+
+defb &11
+defb &2
+defb &21
+defb &40,&1,&3,&6,&C
+defb &2
+defb &20,&E,&8
+
+defb &31
+defb &4
+defb &F1
+defb &74
+defb &F,&18
+defb &31
+defb &10,&DF
+defb &72
+defb &31
+defb &76
+defb &38
+defb &71
+defb &10,&8F
+defb &F3
+defb &72
+defb &F,&1d
+defb &11
+defb &F,&1c
+defb &F2
+defb &B1
+defb &10,&8F
+defb &F,&18
+defb &B2
+defb &F2
+defb &31
+defb &B7
+defb &C2
+defb &32
+defb &91
+defb &10,&87
+defb &33
+defb &61
+defb &10,&C3
+defb &F2
+defb &10,&27
+defb &F,&1c
+defb &31
+defb &F,&1c
+defb &F1
+defb &72
+defb &10,&4F
+
+defb &51
+defb &F,&17
+defb &31
+defb &71
+defb &F2
+defb &71
+defb &31
+defb &74
+defb &C2
+defb &91
+defb &C2
+defb &20,&87,&96
+defb &32
+defb &C2
+defb &91
+defb &C3
+defb &10,&17
+defb &F,&1c
+defb &21
+defb &F,&1c
+defb &F2
+defb &B1
+defb &10,&8F
+
+defb &11
+defb &F,&17
+defb &B2
+defb &F3
+defb &31
+defb &B2
+defb &91
+defb &C9
+defb &91
+defb &C8
+defb &10,&2F
+defb &F,&48
+defb &F2
+defb &72
+defb &31
+defb &71
+defb &F,&17
+defb &21
+defb &71
+defb &F3
+defb &10,&1F
+
+defb &91
+defb &C2
+defb &3
+defb &81
+defb &C9
+defb &41
+defb &2
+defb &81
+defb &10,&4F
+defb &F,&48
+defb &F2
+defb &B1
+defb &32
+defb &B1
+defb &F,&17
+defb &A1
+defb &B2
+defb &F2
+defb &20,&2F,&E1
+defb &6
+defb &C6
+defb &41
+defb &5
+defb &10,&DA
+defb &F,&10
+defb &21
+defb &F,&28
+defb &F2
+defb &72
+defb &31
+defb &10,&57
+defb &F,&16
+defb &21
+defb &10,&4F
+
+defb &F1
+defb &72
+defb &31
+defb &30,&70,&88,&77
+defb &2
+defb &81
+defb &C5
+defb &6
+defb &10,&68
+defb &F,&10
+defb &21
+defb &11
+defb &F,&27
+defb &F3
+defb &20,&2F,&27
+defb &F,&16
+defb &A1
+defb &31
+defb &B3
+defb &32
+defb &10,&30
+
+defb &A1
+defb &F4
+defb &51
+defb &10,&80
+defb &C3
+defb &2
+defb &F4
+defb &51
+defb &10,&48
+
+defb &11
+defb &F,&f
+defb &21
+defb &11
+defb &F,&27
+defb &F3
+defb &72
+defb &10,&4F
+defb &F,&16
+defb &21
+defb &10,&1F
+defb &73
+defb &61
+defb &10,&10
+defb &F6
+defb &2
+defb &C2
+defb &10,&10
+
+defb &A1
+defb &F5
+defb &10,&48
+
+defb &11
+defb &F,&b
+defb &21
+defb &32
+defb &1
+defb &32
+defb &1
+defb &70,&6,&7,&E,&9,&1,&3,&6
+defb &2
+defb &20,&E,&6
+
+defb &1
+defb &32
+defb &1
+defb &20,&6,&6
+
+defb &1
+defb &32
+defb &F,&7
+defb &F4
+defb &32
+defb &B1
+defb &F,&16
+defb &A1
+defb &10,&6F
+defb &B2
+defb &10,&4B
+
+defb &C1
+defb &F4
+defb &32
+defb &F2
+defb &51
+defb &C2
+defb &10,&98
+defb &F6
+defb &10,&59
+
+defb &11
+defb &F,&b
+defb &31
+defb &10,&9
+
+defb &11
+defb &32
+defb &1
+defb &33
+defb &11
+defb &33
+defb &21
+defb &30,&3,&7,&6
+defb &2
+defb &33
+defb &11
+defb &21
+defb &32
+defb &11
+defb &20,&6,&6
+
+defb &21
+defb &32
+defb &11
+defb &F,&6
+defb &A1
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&15
+defb &21
+defb &10,&DF
+defb &32
+defb &10,&69
+
+defb &C1
+defb &F3
+defb &71
+defb &32
+defb &B1
+defb &F2
+defb &C3
+defb &F3
+defb &10,&1F
+
+defb &B1
+defb &F2
+defb &61
+defb &11
+defb &F,&d
+defb &31
+defb &20,&9,&9
+defb &50,&B,&7,&3,&6,&B
+defb &20,&7,&7
+defb &2
+defb &20,&7,&7
+defb &20,&3,&E
+defb &20,&6,&6
+defb &20,&3,&E
+defb &F,&6
+defb &A1
+defb &F3
+defb &B1
+defb &10,&8F
+
+defb &11
+defb &F,&15
+defb &A1
+defb &B1
+defb &F2
+defb &31
+defb &91
+defb &C2
+defb &F3
+defb &33
+defb &B1
+defb &F2
+defb &C3
+defb &F3
+defb &33
+defb &F2
+defb &61
+defb &11
+defb &F,&b
+defb &21
+defb &32
+defb &40,&8,&9,&1,&7
+defb &32
+defb &20,&1,&B
+defb &12
+defb &31
+defb &3
+defb &20,&3,&6
+defb &34
+defb &20,&6,&6
+defb &34
+defb &F,&7
+defb &F3
+defb &72
+defb &31
+defb &71
+defb &F,&15
+defb &21
+defb &F3
+defb &71
+defb &C3
+defb &F3
+defb &32
+defb &10,&E
+defb &F2
+defb &C3
+defb &F2
+defb &71
+defb &33
+defb &B1
+defb &10,&7B
+
+defb &11
+defb &F,&5
+defb &31
+defb &00,&3,&D
+
+defb &11
+defb &2
+defb &21
+defb &60,&9,&1,&7,&3,&6,&E
+
+defb &11
+defb &32
+defb &3
+defb &20,&3,&6
+defb &2
+defb &10,&E
+
+defb &1
+defb &32
+defb &3
+defb &10,&E
+defb &F,&7
+defb &F4
+defb &32
+defb &10,&27
+defb &F,&14
+defb &B1
+defb &F4
+defb &C3
+defb &F3
+defb &20,&7,&C
+defb &F2
+defb &C3
+defb &F2
+defb &71
+defb &30,&7,&8F,&7B
+
+defb &11
+defb &F,&5
+defb &31
+defb &00,&3,&D
+defb &10,&C
+defb &20,&9,&9
+defb &20,&1,&7
+defb &33
+defb &11
+defb &10,&E
+
+defb &11
+defb &32
+defb &3
+defb &20,&3,&6
+
+defb &21
+defb &32
+defb &11
+defb &1
+defb &32
+defb &1
+defb &21
+defb &32
+defb &11
+defb &F,&7
+defb &A1
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&14
+defb &71
+defb &F4
+defb &C3
+defb &E1
+defb &F2
+defb &20,&7,&C
+defb &F2
+defb &C3
+defb &F2
+defb &71
+defb &30,&3,&8E,&7B
+
+defb &11
+defb &F,&5
+defb &31
+defb &20,&D,&D
+defb &10,&9
+defb &32
+defb &50,&C,&8,&1,&7,&B
+
+defb &31
+defb &2
+defb &31
+defb &10,&8
+
+defb &11
+defb &3
+defb &20,&3,&6
+
+defb &1
+defb &32
+defb &2
+defb &21
+defb &11
+defb &2
+defb &32
+defb &F,&8
+defb &A1
+defb &F3
+defb &20,&2F,&27
+defb &F,&14
+defb &B1
+defb &F3
+defb &71
+defb &C3
+defb &E1
+defb &F2
+defb &30,&7,&C,&F7
+defb &C3
+defb &F2
+defb &71
+defb &30,&3,&8E,&7B
+
+defb &11
+defb &F,&49
+defb &F3
+defb &72
+defb &10,&4F
+defb &F,&14
+defb &71
+defb &F3
+defb &71
+defb &C3
+defb &E1
+defb &F2
+defb &30,&17,&8C,&F7
+defb &C3
+defb &E1
+defb &40,&7F,&3,&8E,&79
+
+defb &11
+defb &F,&49
+defb &A1
+defb &F3
+defb &32
+defb &B1
+defb &11
+defb &F,&13
+defb &B1
+defb &F3
+defb &71
+defb &91
+defb &C3
+defb &F2
+defb &30,&1F,&8E,&F3
+
+defb &41
+defb &C2
+defb &E1
+defb &40,&7F,&3,&8E,&79
+
+defb &11
+defb &F,&49
+defb &A1
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&13
+defb &71
+defb &F3
+defb &71
+defb &31
+defb &C3
+defb &F3
+defb &32
+defb &F1
+defb &30,&F1,&90,&F8
+defb &F2
+defb &30,&7,&CF,&79
+
+defb &11
+defb &F,&4a
+defb &F3
+defb &B1
+defb &31
+defb &B2
+defb &F,&13
+defb &B2
+defb &F3
+defb &31
+defb &C3
+defb &E1
+defb &F5
+defb &D1
+defb &C2
+defb &81
+defb &C2
+defb &F2
+defb &30,&1F,&EF,&78
+
+defb &11
+defb &F,&4a
+defb &F3
+defb &72
+defb &31
+defb &71
+defb &F,&13
+defb &72
+defb &F3
+defb &91
+defb &C4
+defb &F5
+defb &C3
+defb &1
+defb &C2
+defb &E1
+defb &F4
+defb &D1
+defb &10,&78
+
+defb &11
+defb &C
+defb &21
+defb &10,&9
+
+defb &11
+defb &A
+defb &21
+defb &31
+defb &2
+defb &21
+defb &31
+defb &7
+defb &10,&7
+defb &F,&2
+defb &31
+defb &11
+defb &3
+defb &11
+defb &7
+defb &10,&6
+defb &F,&1
+defb &A1
+defb &F3
+defb &32
+defb &10,&27
+defb &F,&12
+defb &B1
+defb &10,&BF
+defb &F2
+defb &C6
+defb &F3
+defb &C4
+defb &41
+defb &81
+defb &C2
+defb &F4
+defb &C2
+defb &61
+defb &11
+defb &C
+defb &21
+defb &10,&9
+
+defb &11
+defb &A
+defb &21
+defb &31
+defb &2
+defb &21
+defb &31
+defb &7
+defb &10,&7
+defb &F,&2
+defb &31
+defb &11
+defb &3
+defb &31
+defb &7
+defb &10,&6
+defb &F,&1
+defb &A1
+defb &F2
+defb &72
+defb &32
+defb &51
+defb &F,&12
+defb &21
+defb &10,&7F
+defb &F2
+defb &CD
+defb &1
+defb &81
+defb &C3
+defb &F2
+defb &C3
+defb &61
+defb &D
+defb &21
+defb &10,&9
+
+defb &11
+defb &A
+defb &21
+defb &31
+defb &2
+defb &21
+defb &31
+defb &7
+defb &10,&7
+defb &F,&7
+defb &31
+defb &7
+defb &10,&6
+defb &F,&2
+defb &F3
+defb &10,&2F
+defb &B2
+defb &F,&12
+defb &A1
+defb &B3
+defb &F1
+defb &D1
+defb &CB
+defb &10,&10
+defb &C9
+defb &31
+defb &D
+defb &21
+defb &20,&9,&1
+defb &32
+defb &3
+defb &21
+defb &50,&1,&B,&3,&B,&3
+defb &32
+defb &80,&1,&6,&7,&C,&9,&D,&8,&9
+
+defb &11
+defb &2
+defb &21
+defb &20,&7,&C
+
+defb &11
+defb &2
+defb &32
+defb &11
+defb &40,&3,&6,&E,&6
+defb &F,&2
+defb &F3
+defb &72
+defb &10,&4F
+defb &F,&13
+defb &73
+defb &F2
+defb &CB
+defb &10,&90
+defb &C9
+defb &31
+defb &D
+defb &21
+defb &20,&9,&9
+defb &32
+defb &11
+defb &2
+defb &21
+defb &10,&9
+defb &20,&B,&B
+defb &33
+defb &21
+defb &33
+defb &1
+defb &33
+defb &11
+defb &21
+defb &32
+defb &1
+defb &32
+defb &1
+defb &33
+defb &11
+defb &2
+defb &31
+defb &20,&8,&C
+
+defb &11
+defb &2
+defb &32
+defb &11
+defb &20,&3,&6
+defb &33
+defb &11
+defb &F,&2
+defb &A1
+defb &F3
+defb &32
+defb &B1
+defb &11
+defb &F,&12
+defb &B4
+defb &F1
+defb &CF,&7
+defb &31
+defb &D
+defb &21
+defb &00,&3,&9
+
+defb &11
+defb &2
+defb &21
+defb &20,&9,&9
+defb &60,&B,&9,&B,&1,&B,&3
+defb &00,&3,&7
+defb &20,&E,&E
+defb &10,&C
+
+defb &11
+defb &4
+defb &31
+defb &10,&D
+
+defb &11
+defb &3
+defb &20,&3,&3
+defb &10,&6
+defb &20,&7,&7
+defb &F,&2
+defb &A1
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&12
+defb &10,&DF
+defb &72
+defb &F1
+defb &CF,&7
+defb &31
+defb &D
+defb &21
+defb &20,&9,&9
+defb &10,&7
+defb &3
+defb &21
+defb &20,&9,&9
+defb &30,&B,&9,&B
+defb &32
+defb &80,&8,&3,&7,&3,&6,&C,&E,&C
+
+defb &11
+defb &2
+defb &21
+defb &32
+defb &10,&C
+
+defb &11
+defb &3
+defb &20,&3,&3
+defb &30,&6,&3,&6
+defb &F,&3
+defb &F3
+defb &B1
+defb &31
+defb &B2
+defb &F,&12
+defb &10,&AE
+defb &F2
+defb &B1
+defb &C5
+defb &81
+defb &CF,&1
+defb &31
+defb &D
+defb &21
+defb &00,&3,&9
+
+defb &11
+defb &3
+defb &32
+defb &70,&9,&B,&9,&B,&1,&B,&3
+defb &00,&3,&7
+defb &30,&C,&E,&C
+
+defb &11
+defb &2
+defb &31
+defb &11
+defb &2
+defb &31
+defb &11
+defb &3
+defb &10,&3
+defb &00,&4,&7
+defb &F,&3
+defb &F3
+defb &72
+defb &31
+defb &71
+defb &F,&12
+defb &10,&4E
+defb &F2
+defb &10,&D7
+defb &C3
+defb &41
+defb &1
+defb &CF,&0
+defb &10,&1E
+defb &D
+defb &21
+defb &10,&9
+
+defb &11
+defb &34
+defb &3
+defb &32
+defb &20,&8,&B
+defb &33
+defb &21
+defb &33
+defb &1
+defb &33
+defb &11
+defb &21
+defb &32
+defb &2
+defb &31
+defb &1
+defb &33
+defb &11
+defb &2
+defb &31
+defb &20,&C,&D
+
+defb &11
+defb &2
+defb &32
+defb &1
+defb &33
+defb &11
+defb &33
+defb &11
+defb &F,&3
+defb &A1
+defb &F3
+defb &20,&2F,&27
+defb &F,&11
+defb &10,&AE
+defb &F3
+defb &D1
+defb &C3
+defb &41
+defb &10,&80
+defb &CE
+defb &10,&1E
+defb &D
+defb &21
+defb &10,&9
+defb &20,&D,&D
+
+defb &11
+defb &3
+defb &20,&6,&8
+defb &20,&3,&3
+defb &30,&B,&D,&1
+defb &20,&6,&6
+defb &10,&C
+
+defb &11
+defb &2
+defb &31
+defb &20,&8,&D
+
+defb &11
+defb &2
+defb &21
+defb &32
+defb &10,&C
+
+defb &11
+defb &2
+defb &31
+defb &50,&1,&B,&3,&E,&6
+defb &F,&3
+defb &A1
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&12
+defb &74
+defb &F1
+defb &C3
+defb &41
+defb &2
+defb &CE
+defb &10,&1E
+defb &F,&9
+defb &10,&6
+defb &F,&a
+defb &31
+defb &11
+defb &F,&19
+defb &F4
+defb &31
+defb &B2
+defb &F,&12
+defb &B4
+defb &F1
+defb &C3
+defb &41
+defb &10,&20
+
+defb &81
+defb &CD
+defb &10,&7
+defb &F,&9
+defb &21
+defb &32
+defb &F,&9
+defb &31
+defb &11
+defb &F,&19
+defb &A1
+defb &F2
+defb &72
+defb &10,&4F
+defb &F,&12
+defb &72
+defb &F3
+defb &C3
+defb &43
+defb &1
+defb &CD
+defb &10,&7
+defb &F,&a
+defb &32
+defb &F,&9
+defb &31
+defb &11
+defb &F,&19
+defb &A1
+defb &F3
+defb &B1
+defb &10,&8F
+
+defb &11
+defb &F,&11
+defb &A1
+defb &F4
+defb &D1
+defb &C2
+defb &41
+defb &82
+defb &2
+defb &CB
+defb &61
+defb &10,&7
+defb &F,&4f
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&11
+defb &21
+defb &10,&7F
+defb &F2
+defb &D1
+defb &C2
+defb &45
+defb &10,&80
+defb &C9
+defb &61
+defb &10,&7
+defb &F,&4f
+defb &F4
+defb &31
+defb &B2
+defb &F,&12
+defb &B2
+defb &F2
+defb &D1
+defb &C3
+defb &84
+defb &5
+defb &81
+defb &C5
+defb &32
+defb &F,&3
+defb &21
+defb &31
+defb &7
+defb &20,&6,&E
+defb &F,&7
+defb &10,&3
+
+defb &21
+defb &8
+defb &31
+defb &10,&8
+defb &F,&d
+defb &A1
+defb &F2
+defb &72
+defb &31
+defb &71
+defb &F,&12
+defb &73
+defb &F2
+defb &C3
+defb &45
+defb &3
+defb &81
+defb &C5
+defb &61
+defb &32
+defb &F,&3
+defb &21
+defb &31
+defb &8
+defb &31
+defb &10,&8
+
+defb &11
+defb &F,&6
+defb &20,&3,&6
+defb &7
+defb &31
+defb &10,&8
+
+defb &11
+defb &F,&c
+defb &A1
+defb &F3
+defb &20,&2F,&27
+defb &F,&11
+defb &10,&EF
+
+defb &B1
+defb &F2
+defb &D1
+defb &C3
+defb &84
+defb &2
+defb &81
+defb &C6
+defb &33
+defb &F,&3
+defb &21
+defb &31
+defb &8
+defb &31
+defb &10,&8
+
+defb &11
+defb &F,&6
+defb &20,&3,&6
+defb &7
+defb &31
+defb &10,&8
+
+defb &11
+defb &F,&d
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&10
+defb &21
+defb &10,&DF
+
+defb &71
+defb &F3
+defb &C3
+defb &41
+defb &1
+defb &43
+defb &81
+defb &C6
+defb &61
+defb &33
+defb &F,&4
+defb &31
+defb &22
+defb &11
+defb &30,&8,&3,&E
+
+defb &11
+defb &32
+defb &1
+defb &10,&E
+defb &4
+defb &10,&6
+
+defb &31
+defb &2
+defb &31
+defb &11
+defb &3
+defb &21
+defb &32
+defb &2
+defb &21
+defb &32
+defb &1
+defb &32
+defb &11
+defb &20,&C,&D
+
+defb &21
+defb &32
+defb &F,&d
+defb &F4
+defb &32
+defb &B1
+defb &F,&10
+defb &B2
+defb &F1
+defb &B2
+defb &F2
+defb &D1
+defb &C3
+defb &41
+defb &2
+defb &81
+defb &C7
+defb &34
+defb &F,&4
+defb &20,&9,&7
+
+defb &1
+defb &32
+defb &11
+defb &10,&E
+
+defb &11
+defb &32
+defb &1
+defb &32
+defb &11
+defb &3
+defb &33
+defb &1
+defb &21
+defb &32
+defb &3
+defb &30,&7,&6,&8
+defb &32
+defb &21
+defb &33
+defb &21
+defb &33
+defb &21
+defb &32
+defb &F,&d
+defb &A1
+defb &F2
+defb &72
+defb &10,&4F
+
+defb &51
+defb &F,&e
+defb &72
+defb &F2
+defb &72
+defb &F2
+defb &D1
+defb &CD
+defb &61
+defb &34
+defb &F,&4
+defb &30,&1,&7,&6
+defb &20,&C,&C
+defb &30,&8,&9,&B
+
+defb &31
+defb &3
+defb &20,&3,&3
+defb &20,&7,&7
+defb &4
+defb &10,&7
+defb &2
+defb &20,&6,&6
+defb &10,&C
+defb &20,&E,&E
+defb &10,&8
+
+defb &11
+defb &F,&d
+defb &A1
+defb &F3
+defb &B1
+defb &10,&8F
+
+defb &11
+defb &F,&d
+defb &B3
+defb &F2
+defb &B3
+defb &F2
+defb &CC
+defb &61
+defb &35
+defb &F,&6
+defb &10,&6
+
+defb &21
+defb &33
+defb &40,&C,&8,&9,&1
+
+defb &31
+defb &3
+defb &00,&3,&3
+defb &10,&6
+defb &2
+defb &21
+defb &32
+defb &3
+defb &10,&6
+
+defb &21
+defb &32
+defb &1
+defb &30,&6,&C,&8
+
+defb &11
+defb &F,&e
+defb &F3
+defb &71
+defb &32
+defb &51
+defb &F,&c
+defb &21
+defb &72
+defb &F1
+defb &76
+defb &F2
+defb &CA
+defb &61
+defb &36
+defb &11
+defb &F,&2
+defb &21
+defb &20,&3,&6
+defb &3
+defb &31
+defb &40,&C,&8,&9,&B
+
+defb &31
+defb &3
+defb &20,&3,&3
+defb &20,&7,&7
+defb &2
+defb &10,&7
+defb &4
+defb &20,&6,&6
+defb &40,&C,&6,&C,&8
+
+defb &11
+defb &F,&e
+defb &F4
+defb &32
+defb &B1
+defb &F,&c
+defb &B3
+defb &F1
+defb &B4
+defb &2
+defb &10,&EE
+
+defb &D1
+defb &C8
+defb &38
+defb &11
+defb &F,&2
+defb &21
+defb &20,&3,&6
+
+defb &1
+defb &32
+defb &11
+defb &30,&C,&8,&1
+defb &32
+defb &11
+defb &3
+defb &20,&3,&3
+
+defb &21
+defb &32
+defb &3
+defb &40,&3,&6,&8,&7
+
+defb &21
+defb &33
+defb &30,&6,&C,&E
+
+defb &11
+defb &F,&e
+defb &A1
+defb &F2
+defb &72
+defb &31
+defb &10,&57
+defb &F,&b
+defb &77
+defb &51
+defb &32
+defb &10,&88
+
+defb &D1
+defb &C7
+defb &3A
+defb &F,&2
+defb &21
+defb &30,&3,&6,&8
+
+defb &31
+defb &2
+defb &31
+defb &30,&8,&1,&E
+defb &4
+defb &10,&3
+
+defb &31
+defb &2
+defb &31
+defb &11
+defb &3
+defb &21
+defb &32
+defb &2
+defb &21
+defb &60,&3,&6,&7,&6,&C,&E
+defb &F,&f
+defb &A1
+defb &F3
+defb &20,&2F,&27
+defb &F,&b
+defb &B7
+defb &31
+defb &20,&6F,&3
+
+defb &81
+defb &C5
+defb &61
+defb &3B
+defb &11
+defb &F,&51
+defb &F3
+defb &72
+defb &10,&4F
+defb &F,&b
+defb &21
+defb &76
+defb &21
+defb &30,&8F,&1F,&80
+defb &C3
+defb &61
+defb &34
+defb &11
+defb &5
+defb &32
+defb &11
+defb &F,&f
+defb &81
+defb &10,&70
+defb &F,&30
+defb &A1
+defb &F3
+defb &32
+defb &B1
+defb &F,&12
+defb &21
+defb &30,&4F,&6F,&3
+defb &C2
+defb &61
+defb &34
+defb &11
+defb &F,&18
+defb &C1
+defb &10,&D0
+defb &F,&30
+defb &A1
+defb &F3
+defb &71
+defb &10,&4F
+
+defb &51
+defb &F,&11
+defb &21
+defb &20,&4F,&8F
+defb &32
+defb &10,&E0
+
+defb &61
+defb &34
+defb &2
+defb &21
+defb &F,&16
+defb &C1
+defb &82
+defb &41
+defb &F,&30
+defb &F3
+defb &B1
+defb &10,&8F
+
+defb &11
+defb &4
+defb &B3
+defb &11
+defb &F,&a
+defb &32
+defb &30,&2F,&E1,&D0
+defb &32
+defb &5
+defb &12
+defb &B1
+defb &E
+defb &81
+defb &C2
+defb &F,&2
+defb &10,&60
+defb &2
+defb &10,&60
+defb &F,&2f
+defb &F3
+defb &72
+defb &31
+defb &71
+defb &3
+defb &10,&1F
+defb &72
+defb &51
+defb &F,&b
+defb &31
+defb &40,&2F,&F6,&38,&7
+defb &3
+defb &33
+defb &22
+defb &71
+defb &D
+defb &20,&70,&70
+defb &F,&0
+defb &81
+defb &30,&B0,&80,&C0
+defb &F,&2f
+defb &A1
+defb &F3
+defb &32
+defb &B1
+defb &2
+defb &B1
+defb &32
+defb &B2
+defb &11
+defb &F,&c
+defb &32
+defb &20,&F2,&28
+defb &32
+defb &2
+defb &34
+defb &13
+defb &B2
+defb &31
+defb &21
+defb &9
+defb &C1
+defb &82
+defb &C1
+defb &F,&0
+defb &81
+defb &20,&10,&10
+
+defb &41
+defb &C2
+defb &F,&2e
+defb &A1
+defb &F2
+defb &72
+defb &31
+defb &20,&57,&4E
+defb &32
+defb &10,&DF
+
+defb &51
+defb &F,&b
+defb &31
+defb &20,&C,&61
+defb &82
+defb &32
+defb &1
+defb &22
+defb &72
+defb &31
+defb &72
+defb &21
+defb &73
+defb &21
+defb &72
+defb &51
+defb &5
+defb &C1
+defb &43
+defb &C1
+defb &41
+defb &E
+defb &C1
+defb &41
+defb &2
+defb &82
+defb &1
+defb &C2
+defb &F,&2e
+defb &F3
+defb &10,&2F
+defb &B4
+defb &31
+defb &B3
+defb &51
+defb &F,&b
+defb &31
+defb &2
+defb &20,&C3,&98
+
+defb &61
+defb &2
+defb &11
+defb &B2
+defb &31
+defb &B3
+defb &11
+defb &B2
+defb &31
+defb &21
+defb &B4
+defb &4
+defb &C1
+defb &84
+defb &10,&70
+defb &C
+defb &10,&E0
+
+defb &81
+defb &2
+defb &41
+defb &20,&40,&C0
+
+defb &41
+defb &F,&2d
+defb &F3
+defb &72
+defb &31
+defb &72
+defb &32
+defb &71
+defb &F2
+defb &51
+defb &F,&5
+defb &21
+defb &31
+defb &2
+defb &21
+defb &20,&1,&6
+defb &3
+defb &E1
+defb &91
+defb &2
+defb &21
+defb &10,&4F
+
+defb &31
+defb &74
+defb &21
+defb &72
+defb &10,&4E
+
+defb &F1
+defb &73
+defb &10,&11
+
+defb &81
+defb &46
+defb &C1
+defb &C
+defb &20,&70,&40
+
+defb &1
+defb &83
+defb &10,&80
+
+defb &C1
+defb &F,&2d
+defb &A1
+defb &F3
+defb &31
+defb &B2
+defb &32
+defb &B2
+defb &F2
+defb &51
+defb &F,&0
+defb &21
+defb &36
+defb &1
+defb &10,&E
+defb &22
+defb &B2
+defb &32
+defb &40,&F6,&51,&4,&2F
+defb &B4
+defb &12
+defb &10,&2F
+
+defb &21
+defb &B2
+defb &F2
+defb &B3
+defb &10,&E1
+defb &86
+defb &41
+defb &B
+defb &10,&B0
+defb &4
+defb &42
+defb &20,&20,&70
+defb &F,&d
+defb &2A
+defb &5
+defb &23
+defb &D
+defb &A1
+defb &F3
+defb &74
+defb &31
+defb &71
+defb &F3
+defb &51
+defb &C
+defb &B1
+defb &10,&3F
+
+defb &1
+defb &34
+defb &11
+defb &10,&2
+defb &22
+defb &50,&8,&CF,&1B,&EC,&12
+defb &22
+defb &71
+defb &32
+defb &71
+defb &F1
+defb &72
+defb &22
+defb &71
+defb &10,&4E
+defb &F4
+defb &72
+defb &91
+defb &47
+defb &C1
+defb &A
+defb &81
+defb &10,&30
+
+defb &41
+defb &4
+defb &42
+defb &C1
+defb &10,&E0
+
+defb &41
+defb &F,&2c
+defb &F3
+defb &B3
+defb &31
+defb &B2
+defb &F3
+defb &51
+defb &B
+defb &10,&CE
+defb &32
+defb &10,&C
+
+defb &21
+defb &33
+defb &10,&2
+defb &32
+defb &22
+defb &40,&8F,&11,&CB,&35
+
+defb &1
+defb &B2
+defb &31
+defb &B2
+defb &F2
+defb &10,&27
+defb &B2
+defb &10,&8D
+defb &F4
+defb &10,&2F
+defb &C2
+defb &2
+defb &85
+defb &C1
+defb &9
+defb &C1
+defb &7
+defb &83
+defb &2
+defb &C1
+defb &F,&a
+defb &2F,&5
+defb &E
+defb &F3
+defb &75
+defb &F4
+defb &B
+defb &A1
+defb &F1
+defb &33
+defb &10,&9
+
+defb &1
+defb &34
+defb &1
+defb &10,&9
+
+defb &1
+defb &32
+defb &B1
+defb &30,&1B,&EE,&13
+defb &22
+defb &10,&1F
+
+defb &71
+defb &F2
+defb &73
+defb &20,&4E,&4D
+defb &F3
+defb &72
+defb &21
+defb &10,&70
+defb &3
+defb &44
+defb &C1
+defb &41
+defb &8
+defb &C1
+defb &82
+defb &3
+defb &41
+defb &2
+defb &30,&B0,&40,&60
+defb &F,&2b
+defb &A1
+defb &F3
+defb &B4
+defb &F3
+defb &51
+defb &8
+defb &10,&2
+defb &F2
+defb &32
+defb &2
+defb &10,&9
+defb &35
+defb &1
+defb &32
+defb &21
+defb &32
+defb &F1
+defb &10,&11
+defb &B2
+defb &11
+defb &2
+defb &B1
+defb &31
+defb &B3
+defb &F2
+defb &10,&2F
+defb &20,&8D,&8D
+defb &F3
+defb &B1
+defb &10,&85
+
+defb &C1
+defb &5
+defb &84
+defb &C1
+defb &8
+defb &81
+defb &10,&70
+defb &2
+defb &82
+defb &3
+defb &41
+defb &81
+defb &42
+defb &C1
+defb &F,&9
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&0
+defb &A1
+defb &F3
+defb &73
+defb &F4
+defb &A
+defb &F1
+defb &71
+defb &32
+defb &11
+defb &2
+defb &10,&9
+defb &32
+defb &4
+defb &32
+defb &10,&C
+defb &B2
+defb &25
+defb &1
+defb &22
+defb &32
+defb &F4
+defb &72
+defb &20,&4E,&4D
+defb &F2
+defb &72
+defb &10,&C2
+
+defb &41
+defb &4
+defb &41
+defb &1
+defb &43
+defb &10,&70
+defb &8
+defb &20,&E0,&20
+
+defb &41
+defb &82
+defb &3
+defb &20,&10,&90
+
+defb &C1
+defb &F,&2b
+defb &F4
+defb &B2
+defb &F3
+defb &51
+defb &9
+defb &F1
+defb &34
+defb &11
+defb &42
+defb &31
+defb &3
+defb &21
+defb &32
+defb &1
+defb &13
+defb &32
+defb &12
+defb &1
+defb &13
+defb &2
+defb &B1
+defb &31
+defb &B2
+defb &F4
+defb &B1
+defb &50,&8D,&8B,&EF,&27,&E1
+defb &5
+defb &41
+defb &1
+defb &84
+defb &E1
+defb &11
+defb &8
+defb &C1
+defb &41
+defb &2
+defb &43
+defb &2
+defb &10,&90
+defb &2
+defb &10,&70
+defb &F,&7
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&1
+defb &F3
+defb &72
+defb &F4
+defb &51
+defb &7
+defb &20,&EE,&1F
+defb &2
+defb &30,&6,&70,&3
+defb &33
+defb &1
+defb &20,&3,&7
+
+defb &21
+defb &32
+defb &21
+defb &6
+defb &20,&4E,&4F
+defb &F4
+defb &72
+defb &20,&E,&1B
+defb &73
+defb &21
+defb &10,&70
+defb &4
+defb &10,&60
+defb &2
+defb &43
+defb &61
+defb &71
+defb &8
+defb &81
+defb &10,&B0
+
+defb &1
+defb &83
+defb &41
+defb &2
+defb &41
+defb &20,&40,&E0
+defb &F,&2a
+defb &F4
+defb &B1
+defb &F4
+defb &7
+defb &A1
+defb &71
+defb &33
+defb &30,&C0,&6,&70
+defb &20,&3,&3
+
+defb &31
+defb &12
+defb &21
+defb &13
+defb &32
+defb &11
+defb &21
+defb &5
+defb &32
+defb &B2
+defb &F5
+defb &B1
+defb &20,&8D,&8B
+defb &B2
+defb &10,&85
+
+defb &C1
+defb &5
+defb &81
+defb &3
+defb &83
+defb &B2
+defb &11
+defb &8
+defb &10,&70
+defb &2
+defb &42
+defb &81
+defb &2
+defb &41
+defb &82
+defb &10,&80
+
+defb &C1
+defb &F,&6
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&0
+defb &10,&AE
+defb &F7
+defb &51
+defb &6
+defb &A1
+defb &32
+defb &11
+defb &60,&C,&20,&6,&20,&3,&B
+defb &32
+defb &50,&9,&7,&E,&1F,&4
+defb &3
+defb &22
+defb &32
+defb &F5
+defb &72
+defb &21
+defb &72
+defb &21
+defb &72
+defb &10,&C2
+
+defb &41
+defb &5
+defb &41
+defb &4
+defb &42
+defb &73
+defb &8
+defb &30,&E0,&40,&20
+
+defb &41
+defb &3
+defb &42
+defb &20,&20,&70
+defb &F,&27
+defb &72
+defb &B1
+defb &F6
+defb &6
+defb &A1
+defb &71
+defb &32
+defb &1
+defb &10,&38
+
+defb &81
+defb &2
+defb &11
+defb &20,&20,&7
+
+defb &21
+defb &33
+defb &11
+defb &23
+defb &30,&8C,&3F,&1
+defb &14
+defb &10,&2F
+defb &B2
+defb &F5
+defb &B1
+defb &40,&1,&23,&7,&E1
+defb &5
+defb &C1
+defb &4
+defb &C1
+defb &82
+defb &B3
+defb &C1
+defb &8
+defb &81
+defb &C1
+defb &2
+defb &81
+defb &30,&C0,&10,&20
+defb &42
+defb &10,&E0
+defb &F,&5
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &E
+defb &B2
+defb &32
+defb &F6
+defb &51
+defb &82
+defb &2
+defb &40,&6E,&3,&83,&18
+
+defb &81
+defb &2
+defb &11
+defb &2
+defb &10,&7
+defb &22
+defb &50,&B,&9,&3,&E,&7F
+
+defb &31
+defb &25
+defb &33
+defb &F5
+defb &72
+defb &21
+defb &2
+defb &11
+defb &20,&8,&70
+defb &5
+defb &41
+defb &4
+defb &10,&10
+
+defb &41
+defb &73
+defb &10,&70
+defb &8
+defb &C1
+defb &42
+defb &1
+defb &10,&20
+
+defb &41
+defb &2
+defb &83
+defb &10,&80
+
+defb &C1
+defb &F,&25
+defb &72
+defb &32
+defb &F6
+defb &51
+defb &2
+defb &42
+defb &10,&6E
+defb &2
+defb &21
+defb &2
+defb &21
+defb &20,&C0,&4
+defb &2
+defb &30,&7,&2,&9
+
+defb &1
+defb &23
+defb &20,&8D,&BF
+defb &36
+defb &10,&2F
+defb &B2
+defb &F4
+defb &B1
+defb &12
+defb &2
+defb &22
+defb &91
+defb &10,&70
+defb &4
+defb &81
+defb &4
+defb &81
+defb &40,&10,&A8,&A7,&E0
+defb &8
+defb &10,&E0
+defb &2
+defb &20,&90,&40
+defb &2
+defb &C1
+defb &42
+defb &1
+defb &10,&70
+defb &F,&3
+defb &2F,&5
+defb &C
+defb &10,&AE
+defb &32
+defb &B2
+defb &F5
+defb &51
+defb &C2
+defb &82
+defb &50,&C,&81,&2,&20,&81
+
+defb &1
+defb &35
+defb &1
+defb &33
+defb &1
+defb &32
+defb &1
+defb &10,&E
+
+defb &F1
+defb &72
+defb &36
+defb &71
+defb &10,&4F
+defb &F4
+defb &72
+defb &5
+defb &C2
+defb &4
+defb &81
+defb &41
+defb &4
+defb &81
+defb &3
+defb &41
+defb &20,&13,&D0
+
+defb &41
+defb &7
+defb &81
+defb &C2
+defb &2
+defb &41
+defb &82
+defb &3
+defb &81
+defb &20,&C0,&C0
+
+defb &41
+defb &F,&22
+defb &10,&4E
+defb &32
+defb &71
+defb &F6
+defb &81
+defb &C2
+defb &43
+defb &12
+defb &81
+defb &20,&14,&70
+
+defb &11
+defb &2
+defb &11
+defb &2
+defb &32
+defb &3
+defb &21
+defb &1
+defb &32
+defb &21
+defb &20,&D,&EF
+
+defb &B1
+defb &35
+defb &B2
+defb &31
+defb &B2
+defb &F3
+defb &10,&27
+defb &4
+defb &C1
+defb &43
+defb &2
+defb &10,&E0
+defb &4
+defb &10,&60
+defb &6
+defb &82
+defb &10,&70
+defb &6
+defb &82
+defb &C2
+defb &2
+defb &42
+defb &81
+defb &2
+defb &41
+defb &82
+defb &2
+defb &C1
+defb &F,&2
+defb &2F,&5
+defb &C
+defb &A1
+defb &B4
+defb &F5
+defb &10,&90
+defb &C2
+defb &41
+defb &2
+defb &11
+defb &20,&3,&14
+defb &2
+defb &36
+defb &A
+defb &20,&E,&DF
+defb &76
+defb &31
+defb &73
+defb &F3
+defb &72
+defb &5
+defb &C1
+defb &83
+defb &1
+defb &C2
+defb &4
+defb &C2
+defb &4
+defb &43
+defb &10,&40
+defb &C2
+defb &6
+defb &10,&30
+
+defb &81
+defb &C2
+defb &1
+defb &10,&20
+
+defb &81
+defb &3
+defb &81
+defb &C2
+defb &1
+defb &10,&60
+defb &F,&21
+defb &21
+defb &73
+defb &F5
+defb &51
+defb &81
+defb &C3
+defb &30,&D0,&C,&82
+
+defb &41
+defb &33
+defb &20,&1,&E
+
+defb &11
+defb &A
+defb &12
+defb &31
+defb &B2
+defb &F5
+defb &31
+defb &B2
+defb &31
+defb &B3
+defb &10,&BF
+defb &12
+defb &4
+defb &C1
+defb &44
+defb &4
+defb &81
+defb &10,&70
+defb &5
+defb &83
+defb &1
+defb &82
+defb &C1
+defb &41
+defb &4
+defb &81
+defb &41
+defb &2
+defb &81
+defb &C2
+defb &10,&80
+
+defb &41
+defb &3
+defb &C1
+defb &43
+defb &10,&C0
+defb &F,&1
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &D
+defb &A1
+defb &B3
+defb &F5
+defb &1
+defb &C3
+defb &41
+defb &40,&E0,&58,&6,&E
+defb &2
+defb &32
+defb &11
+defb &B
+defb &23
+defb &32
+defb &76
+defb &31
+defb &21
+defb &77
+defb &21
+defb &5
+defb &C1
+defb &88
+defb &3
+defb &85
+defb &44
+defb &1
+defb &41
+defb &C2
+defb &41
+defb &3
+defb &C1
+defb &4
+defb &C2
+defb &41
+defb &5
+defb &30,&20,&D0,&90
+
+defb &C1
+defb &F,&20
+defb &21
+defb &72
+defb &F3
+defb &20,&11,&B1
+defb &C3
+defb &1
+defb &C2
+defb &20,&18,&D
+
+defb &11
+defb &33
+defb &11
+defb &D
+defb &11
+defb &2
+defb &37
+defb &13
+defb &B2
+defb &31
+defb &B3
+defb &12
+defb &5
+defb &C1
+defb &4F,&0
+defb &C3
+defb &82
+defb &1
+defb &82
+defb &C2
+defb &2
+defb &10,&60
+defb &4
+defb &81
+defb &C2
+defb &1
+defb &81
+defb &5
+defb &30,&20,&10,&60
+defb &E
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &D
+defb &A1
+defb &B2
+defb &F3
+defb &2
+defb &81
+defb &C3
+defb &10,&90
+defb &C2
+defb &42
+defb &20,&12,&6
+defb &F,&2
+defb &31
+defb &10,&6
+
+defb &21
+defb &34
+defb &24
+defb &73
+defb &33
+defb &21
+defb &6
+defb &C5
+defb &8C
+defb &C2
+defb &43
+defb &10,&40
+defb &C2
+defb &20,&10,&70
+defb &4
+defb &81
+defb &C2
+defb &42
+defb &7
+defb &41
+defb &2
+defb &C1
+defb &F,&13
+defb &2A
+defb &2
+defb &10,&4E
+defb &F3
+defb &51
+defb &2
+defb &81
+defb &C7
+defb &1
+defb &82
+defb &32
+defb &F,&2
+defb &11
+defb &2
+defb &11
+defb &3
+defb &33
+defb &13
+defb &B3
+defb &32
+defb &12
+defb &6
+defb &81
+defb &C9
+defb &46
+defb &20,&BC,&E1
+defb &82
+defb &1
+defb &82
+defb &C5
+defb &4
+defb &30,&60,&E0,&10
+
+defb &81
+defb &4
+defb &C1
+defb &3
+defb &81
+defb &C1
+defb &D
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &D
+defb &10,&AE
+defb &F2
+defb &51
+defb &3
+defb &81
+defb &C6
+defb &41
+defb &10,&20
+
+defb &41
+defb &F,&4
+defb &23
+defb &2
+defb &31
+defb &3
+defb &21
+defb &31
+defb &23
+defb &74
+defb &21
+defb &D
+defb &CB
+defb &72
+defb &C2
+defb &42
+defb &1
+defb &41
+defb &C3
+defb &82
+defb &41
+defb &3
+defb &81
+defb &2
+defb &C2
+defb &1
+defb &41
+defb &8
+defb &C2
+defb &41
+defb &F,&15
+defb &22
+defb &6
+defb &21
+defb &F3
+defb &51
+defb &4
+defb &C6
+defb &81
+defb &10,&70
+
+defb &81
+defb &F,&4
+defb &12
+defb &31
+defb &4
+defb &31
+defb &10,&1
+
+defb &21
+defb &33
+defb &B4
+defb &11
+defb &F,&0
+defb &10,&86
+defb &C6
+defb &E1
+defb &B2
+defb &C4
+defb &1
+defb &81
+defb &C2
+defb &81
+defb &42
+defb &10,&70
+defb &2
+defb &C1
+defb &3
+defb &C2
+defb &2
+defb &41
+defb &4
+defb &41
+defb &C4
+defb &C
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&7
+defb &81
+defb &C4
+defb &1
+defb &C2
+defb &42
+defb &F,&3
+defb &24
+defb &32
+defb &11
+defb &4
+defb &10,&E
+defb &72
+defb &32
+defb &72
+defb &21
+defb &F,&1
+defb &21
+defb &31
+defb &74
+defb &C1
+defb &70,&1E,&E1,&91,&70,&E0,&10,&E0
+defb &82
+defb &10,&90
+
+defb &41
+defb &3
+defb &20,&E0,&90
+defb &3
+defb &41
+defb &C4
+defb &F,&17
+defb &22
+defb &4
+defb &21
+defb &B
+defb &C3
+defb &41
+defb &81
+defb &C2
+defb &1
+defb &81
+defb &F,&6
+defb &11
+defb &35
+defb &10,&1
+
+defb &31
+defb &B3
+defb &31
+defb &B3
+defb &11
+defb &F,&3
+defb &32
+defb &B2
+defb &91
+defb &20,&9E,&E1
+
+defb &B1
+defb &2
+defb &C3
+defb &3
+defb &81
+defb &42
+defb &C2
+defb &41
+defb &4
+defb &C2
+defb &41
+defb &1
+defb &82
+defb &C3
+defb &41
+defb &F,&0
+defb &2F,&5
+defb &F,&7
+defb &C6
+defb &10,&10
+
+defb &41
+defb &F,&3
+defb &22
+defb &11
+defb &21
+defb &2
+defb &36
+defb &71
+defb &F1
+defb &72
+defb &31
+defb &72
+defb &21
+defb &F,&5
+defb &21
+defb &30,&C7,&7C,&F1
+
+defb &71
+defb &2
+defb &81
+defb &C2
+defb &4
+defb &10,&E0
+defb &82
+defb &C1
+defb &5
+defb &C6
+defb &41
+defb &F,&1a
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &5
+defb &81
+defb &C4
+defb &41
+defb &10,&40
+defb &F,&7
+defb &31
+defb &6
+defb &21
+defb &10,&8F
+defb &F2
+defb &32
+defb &B1
+defb &13
+defb &F,&5
+defb &10,&86
+
+defb &C1
+defb &B2
+defb &C2
+defb &2
+defb &81
+defb &41
+defb &C2
+defb &4
+defb &81
+defb &42
+defb &10,&70
+defb &5
+defb &C4
+defb &F,&4
+defb &2F,&5
+defb &F,&7
+defb &81
+defb &C3
+defb &2
+defb &C2
+defb &F,&4
+defb &24
+defb &2
+defb &32
+defb &2
+defb &21
+defb &31
+defb &F3
+defb &20,&1B,&1F
+
+defb &21
+defb &F,&8
+defb &C2
+defb &10,&D2
+defb &3
+defb &81
+defb &10,&30
+defb &C2
+defb &4
+defb &83
+defb &C1
+defb &6
+defb &C2
+defb &F,&1d
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &6
+defb &C6
+defb &41
+defb &F,&5
+defb &13
+defb &31
+defb &5
+defb &21
+defb &B1
+defb &F3
+defb &10,&7
+defb &32
+defb &10,&27
+defb &F,&7
+defb &10,&E0
+
+defb &41
+defb &3
+defb &C4
+defb &1
+defb &C2
+defb &4
+defb &41
+defb &C2
+defb &41
+defb &F,&c
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&9
+defb &81
+defb &C5
+defb &F,&5
+defb &24
+defb &35
+defb &10,&1
+
+defb &31
+defb &F3
+defb &71
+defb &22
+defb &31
+defb &71
+defb &F,&9
+defb &81
+defb &20,&70,&80
+defb &C2
+defb &81
+defb &C2
+defb &1
+defb &C2
+defb &3
+defb &C2
+defb &81
+defb &C1
+defb &F,&20
+defb &2F,&2
+defb &7
+defb &C4
+defb &F,&6
+defb &11
+defb &2
+defb &10,&3
+
+defb &21
+defb &35
+defb &B4
+defb &10,&7
+
+defb &31
+defb &B2
+defb &F,&a
+defb &C5
+defb &43
+defb &C2
+defb &1
+defb &C2
+defb &1
+defb &10,&E0
+defb &42
+defb &10,&70
+defb &F,&b
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&23
+defb &24
+defb &3
+defb &35
+defb &74
+defb &32
+defb &71
+defb &F1
+defb &F,&b
+defb &C4
+defb &83
+defb &1
+defb &C2
+defb &1
+defb &10,&70
+defb &C2
+defb &1
+defb &82
+defb &C1
+defb &F,&23
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&11
+defb &12
+defb &1
+defb &10,&9
+
+defb &31
+defb &3
+defb &36
+defb &10,&2F
+defb &B2
+defb &F1
+defb &F,&c
+defb &C2
+defb &44
+defb &2
+defb &C2
+defb &1
+defb &C2
+defb &42
+defb &1
+defb &41
+defb &C2
+defb &F,&a
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&23
+defb &23
+defb &11
+defb &5
+defb &21
+defb &32
+defb &72
+defb &31
+defb &72
+defb &21
+defb &72
+defb &F,&c
+defb &C2
+defb &83
+defb &4
+defb &C2
+defb &1
+defb &C1
+defb &82
+defb &1
+defb &83
+defb &41
+defb &F,&21
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&11
+defb &13
+defb &32
+defb &2
+defb &10,&7
+
+defb &21
+defb &B3
+defb &20,&3F,&2F
+
+defb &11
+defb &B2
+defb &F,&c
+defb &C2
+defb &43
+defb &5
+defb &C2
+defb &44
+defb &1
+defb &42
+defb &C1
+defb &F,&9
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&22
+defb &24
+defb &34
+defb &2
+defb &10,&4E
+defb &F2
+defb &74
+defb &22
+defb &31
+defb &F,&c
+defb &C2
+defb &82
+defb &7
+defb &C2
+defb &83
+defb &1
+defb &83
+defb &41
+defb &F,&20
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&11
+defb &11
+defb &1
+defb &36
+defb &11
+defb &10,&8F
+defb &F3
+defb &31
+defb &B2
+defb &12
+defb &B1
+defb &F,&b
+defb &81
+defb &C1
+defb &44
+defb &5
+defb &82
+defb &C4
+defb &10,&10
+defb &42
+defb &10,&70
+defb &F,&7
+defb &2F,&5
+defb &F,&21
+defb &21
+defb &2
+defb &21
+defb &1
+defb &36
+defb &F3
+defb &72
+defb &33
+defb &21
+defb &F1
+defb &F,&b
+defb &81
+defb &C1
+defb &83
+defb &41
+defb &5
+defb &42
+defb &C2
+defb &20,&90,&30
+defb &83
+defb &C1
+defb &F,&1f
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&11
+defb &11
+defb &20,&8,&1
+
+defb &21
+defb &33
+defb &B1
+defb &F2
+defb &B2
+defb &31
+defb &10,&D
+defb &B2
+defb &F1
+defb &F,&b
+defb &C1
+defb &43
+defb &C1
+defb &3
+defb &C1
+defb &41
+defb &83
+defb &30,&90,&B0,&70
+defb &2
+defb &10,&D0
+
+defb &41
+defb &F,&6
+defb &2F,&5
+defb &F,&21
+defb &31
+defb &22
+defb &31
+defb &11
+defb &3
+defb &10,&E
+defb &75
+defb &31
+defb &22
+defb &72
+defb &F1
+defb &F,&a
+defb &10,&E0
+defb &83
+defb &41
+defb &3
+defb &C2
+defb &42
+defb &C1
+defb &2
+defb &20,&E0,&C0
+defb &2
+defb &82
+defb &C1
+defb &F,&1a
+defb &2F,&2
+defb &F,&10
+defb &B3
+defb &31
+defb &30,&1,&E,&C
+defb &B3
+defb &32
+defb &12
+defb &31
+defb &20,&9,&67
+defb &F,&9
+defb &81
+defb &43
+defb &C1
+defb &4
+defb &81
+defb &C2
+defb &10,&60
+defb &3
+defb &C1
+defb &41
+defb &C2
+defb &2
+defb &41
+defb &C2
+defb &F,&5
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&22
+defb &31
+defb &74
+defb &31
+defb &3
+defb &11
+defb &33
+defb &11
+defb &31
+defb &5
+defb &10,&6
+defb &F,&9
+defb &C1
+defb &83
+defb &41
+defb &5
+defb &82
+defb &C1
+defb &4
+defb &81
+defb &20,&70,&E0
+
+defb &1
+defb &83
+defb &C1
+defb &F,&1c
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&f
+defb &21
+defb &B2
+defb &F1
+defb &B3
+defb &33
+defb &25
+defb &2
+defb &10,&9
+defb &12
+defb &10,&7
+defb &F,&8
+defb &81
+defb &43
+defb &C1
+defb &6
+defb &42
+defb &C1
+defb &5
+defb &C2
+defb &20,&E0,&10
+defb &42
+defb &10,&70
+defb &F,&3
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&21
+defb &21
+defb &31
+defb &F2
+defb &74
+defb &35
+defb &12
+defb &10,&4
+defb &3
+defb &21
+defb &32
+defb &F,&8
+defb &C1
+defb &83
+defb &41
+defb &4
+defb &C1
+defb &83
+defb &7
+defb &C2
+defb &1
+defb &10,&30
+defb &83
+defb &C1
+defb &F,&1b
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&f
+defb &21
+defb &B2
+defb &F2
+defb &B2
+defb &32
+defb &21
+defb &B3
+defb &10,&B
+defb &2
+defb &10,&6
+defb &22
+defb &10,&B
+defb &F,&7
+defb &81
+defb &43
+defb &C1
+defb &5
+defb &C1
+defb &43
+defb &7
+defb &81
+defb &10,&30
+defb &C2
+defb &1
+defb &42
+defb &C1
+defb &41
+defb &F,&2
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&21
+defb &21
+defb &71
+defb &F3
+defb &73
+defb &11
+defb &32
+defb &72
+defb &13
+defb &4
+defb &31
+defb &10,&C
+defb &F,&7
+defb &C1
+defb &83
+defb &41
+defb &5
+defb &C2
+defb &10,&60
+defb &8
+defb &C2
+defb &20,&90,&10
+defb &82
+defb &C1
+defb &F,&1a
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &F,&f
+defb &31
+defb &B1
+defb &F4
+defb &B1
+defb &10,&B
+
+defb &31
+defb &B3
+defb &31
+defb &2
+defb &31
+defb &23
+defb &11
+defb &22
+defb &F,&6
+defb &81
+defb &43
+defb &C1
+defb &6
+defb &10,&20
+
+defb &C1
+defb &A
+defb &81
+defb &10,&90
+
+defb &C1
+defb &2
+defb &41
+defb &10,&70
+defb &F,&1
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&21
+defb &31
+defb &71
+defb &F3
+defb &72
+defb &10,&B
+
+defb &31
+defb &73
+defb &31
+defb &4
+defb &21
+defb &20,&3,&D
+defb &F,&6
+defb &84
+defb &41
+defb &6
+defb &42
+defb &81
+defb &B
+defb &C2
+defb &10,&C0
+
+defb &1
+defb &82
+defb &C1
+defb &F,&19
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &A
+defb &2B
+defb &9
+defb &31
+defb &B1
+defb &F4
+defb &31
+defb &10,&D
+defb &B3
+defb &32
+defb &1
+defb &40,&B,&C,&9,&C
+
+defb &11
+defb &F,&5
+defb &81
+defb &42
+defb &C1
+defb &5
+defb &C1
+defb &82
+defb &C1
+defb &C
+defb &10,&E0
+
+defb &1
+defb &C2
+defb &1
+defb &C2
+defb &F,&1
+defb &2F,&5
+defb &F,&20
+defb &31
+defb &72
+defb &F2
+defb &72
+defb &10,&E
+defb &73
+defb &31
+defb &11
+defb &3
+defb &30,&E,&4,&E
+
+defb &11
+defb &F,&6
+defb &10,&B0
+
+defb &41
+defb &5
+defb &C1
+defb &42
+defb &C1
+defb &D
+defb &81
+defb &10,&70
+
+defb &81
+defb &C3
+defb &F,&15
+defb &2F,&2
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &21
+defb &9
+defb &31
+defb &B2
+defb &F2
+defb &10,&2F
+
+defb &21
+defb &B2
+defb &F1
+defb &32
+defb &40,&C,&2,&7,&2
+defb &32
+defb &11
+defb &8
+defb &2C
+defb &1
+defb &10,&E0
+defb &6
+defb &C2
+defb &10,&60
+defb &E
+defb &10,&70
+
+defb &81
+defb &C3
+defb &41
+defb &F,&0
+defb &2F,&5
+defb &F,&1f
+defb &22
+defb &10,&4F
+
+defb &F1
+defb &72
+defb &11
+defb &10,&4F
+
+defb &F1
+defb &72
+defb &11
+defb &3
+defb &31
+defb &10,&1
+
+defb &11
+defb &33
+defb &11
+defb &F,&7
+defb &C2
+defb &5
+defb &10,&30
+
+defb &C1
+defb &F,&0
+defb &81
+defb &C3
+defb &81
+defb &C2
+defb &41
+defb &F,&17
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &21
+defb &8
+defb &10,&6
+
+defb &31
+defb &B3
+defb &10,&B
+defb &B3
+defb &F1
+defb &31
+defb &13
+defb &10,&E
+defb &2
+defb &21
+defb &32
+defb &11
+defb &21
+defb &8
+defb &21
+defb &4
+defb &23
+defb &4
+defb &21
+defb &2
+defb &C2
+defb &41
+defb &2
+defb &82
+defb &41
+defb &F,&2
+defb &81
+defb &20,&70,&80
+defb &C2
+defb &E
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&20
+defb &20,&E,&E
+defb &72
+defb &10,&B
+
+defb &31
+defb &F2
+defb &72
+defb &12
+defb &33
+defb &10,&4
+defb &32
+defb &22
+defb &31
+defb &F,&9
+defb &C2
+defb &41
+defb &1
+defb &42
+defb &C1
+defb &F,&7
+defb &10,&E0
+
+defb &41
+defb &F,&16
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &A
+defb &21
+defb &4
+defb &21
+defb &4
+defb &21
+defb &8
+defb &40,&E,&D,&2F,&D
+defb &B2
+defb &20,&BF,&7
+defb &33
+defb &1
+defb &10,&2
+
+defb &31
+defb &22
+defb &32
+defb &7
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &3
+defb &81
+defb &C2
+defb &82
+defb &41
+defb &F,&8
+defb &C2
+defb &41
+defb &C
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&20
+defb &40,&4F,&B,&4F,&E
+
+defb &71
+defb &F2
+defb &72
+defb &21
+defb &32
+defb &20,&8,&4
+defb &32
+defb &10,&D
+defb &12
+defb &F,&a
+defb &81
+defb &C3
+defb &F,&a
+defb &C2
+defb &F,&15
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &A
+defb &21
+defb &4
+defb &21
+defb &4
+defb &22
+defb &7
+defb &20,&8F,&7
+defb &32
+defb &21
+defb &B2
+defb &F2
+defb &B1
+defb &40,&B,&3,&6,&4
+defb &32
+defb &20,&D,&6
+defb &6
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &5
+defb &10,&E0
+defb &F,&b
+defb &10,&E0
+
+defb &41
+defb &B
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&20
+defb &31
+defb &72
+defb &31
+defb &20,&6,&4F
+defb &F2
+defb &72
+defb &31
+defb &2
+defb &21
+defb &10,&9
+defb &12
+defb &30,&3,&B,&7
+defb &F,&28
+defb &C2
+defb &41
+defb &F,&13
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &2D
+defb &7
+defb &B3
+defb &31
+defb &12
+defb &B3
+defb &F2
+defb &B1
+defb &30,&B,&7,&E
+defb &12
+defb &21
+defb &32
+defb &21
+defb &10,&B
+defb &6
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &F,&13
+defb &81
+defb &C2
+defb &A
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&1f
+defb &21
+defb &31
+defb &73
+defb &10,&B
+
+defb &31
+defb &72
+defb &F1
+defb &72
+defb &10,&B
+defb &2
+defb &10,&7
+
+defb &1
+defb &22
+defb &32
+defb &21
+defb &10,&D
+defb &F,&29
+defb &10,&E0
+
+defb &41
+defb &F,&e
+defb &2F,&2
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &6
+defb &21
+defb &B4
+defb &10,&7
+
+defb &31
+defb &B5
+defb &31
+defb &22
+defb &31
+defb &40,&1,&B,&4,&6
+defb &32
+defb &6
+defb &2F,&0
+defb &F,&0
+defb &81
+defb &F,&5
+defb &C2
+defb &9
+defb &2F,&5
+defb &F,&1e
+defb &21
+defb &74
+defb &10,&7
+
+defb &31
+defb &75
+defb &40,&3,&6,&8,&9
+
+defb &1
+defb &32
+defb &11
+defb &32
+defb &F,&15
+defb &10,&E0
+defb &F,&4
+defb &81
+defb &C2
+defb &F,&d
+defb &2F,&2
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &6
+defb &21
+defb &B2
+defb &F1
+defb &B2
+defb &31
+defb &21
+defb &B4
+defb &32
+defb &21
+defb &20,&3,&7
+
+defb &1
+defb &12
+defb &21
+defb &34
+defb &6
+defb &2F,&0
+defb &F,&2
+defb &41
+defb &F,&4
+defb &10,&E0
+
+defb &41
+defb &7
+defb &2F,&5
+defb &F,&1e
+defb &21
+defb &10,&DF
+defb &74
+defb &11
+defb &33
+defb &72
+defb &30,&D,&9,&1
+
+defb &31
+defb &12
+defb &4
+defb &21
+defb &F,&17
+defb &10,&60
+defb &F,&4
+defb &C2
+defb &F,&10
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &6
+defb &B3
+defb &F1
+defb &B3
+defb &31
+defb &2
+defb &33
+defb &20,&D,&D
+
+defb &1
+defb &32
+defb &1
+defb &11
+defb &33
+defb &10,&9
+
+defb &11
+defb &5
+defb &2F,&0
+defb &F,&3
+defb &81
+defb &41
+defb &F,&3
+defb &81
+defb &C2
+defb &6
+defb &21
+defb &4
+defb &22
+defb &4
+defb &22
+defb &4
+defb &22
+defb &F,&1f
+defb &72
+defb &F2
+defb &73
+defb &11
+defb &32
+defb &2
+defb &31
+defb &20,&D,&1
+defb &32
+defb &12
+defb &4
+defb &10,&E
+
+defb &11
+defb &F,&18
+defb &81
+defb &F,&4
+defb &10,&E0
+
+defb &41
+defb &F,&e
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &6
+defb &B2
+defb &F2
+defb &B2
+defb &31
+defb &21
+defb &34
+defb &2
+defb &21
+defb &30,&1,&7,&4
+
+defb &21
+defb &35
+defb &11
+defb &5
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &F,&5
+defb &C1
+defb &F,&4
+defb &C2
+defb &5
+defb &21
+defb &4
+defb &22
+defb &5
+defb &21
+defb &4
+defb &22
+defb &F,&1f
+defb &72
+defb &F2
+defb &72
+defb &11
+defb &31
+defb &73
+defb &20,&7,&8
+defb &33
+defb &1
+defb &10,&2
+
+defb &31
+defb &3
+defb &32
+defb &F,&14
+defb &81
+defb &6
+defb &41
+defb &F,&3
+defb &81
+defb &10,&70
+defb &F,&d
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &2D
+defb &6
+defb &B2
+defb &F2
+defb &B1
+defb &10,&B
+defb &B5
+defb &3
+defb &30,&7,&8,&1
+
+defb &11
+defb &33
+defb &21
+defb &12
+defb &5
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &E
+defb &81
+defb &C1
+defb &5
+defb &10,&60
+defb &F,&3
+defb &C2
+defb &41
+defb &3
+defb &21
+defb &4
+defb &21
+defb &5
+defb &C1
+defb &41
+defb &4
+defb &22
+defb &F,&1e
+defb &10,&4E
+defb &F2
+defb &72
+defb &10,&D
+defb &74
+defb &51
+defb &3
+defb &21
+defb &2
+defb &11
+defb &40,&C,&6,&C,&D
+
+defb &11
+defb &F,&14
+defb &10,&E0
+defb &5
+defb &81
+defb &F,&4
+defb &C2
+defb &B
+defb &20,&77,&C0
+
+defb &41
+defb &B
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &5
+defb &10,&AE
+defb &F2
+defb &B2
+defb &11
+defb &B3
+defb &10,&BF
+
+defb &11
+defb &4
+defb &11
+defb &10,&3
+defb &20,&7,&7
+defb &20,&4,&B
+
+defb &11
+defb &5
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &F,&1
+defb &81
+defb &41
+defb &5
+defb &C1
+defb &F,&3
+defb &81
+defb &20,&B0,&10
+
+defb &21
+defb &6
+defb &F3
+defb &10,&91
+
+defb &C1
+defb &4
+defb &22
+defb &F,&1e
+defb &10,&4E
+
+defb &F1
+defb &73
+defb &10,&D
+
+defb &71
+defb &F2
+defb &71
+defb &5
+defb &12
+defb &21
+defb &10,&B
+defb &12
+defb &1
+defb &32
+defb &11
+defb &31
+defb &F,&16
+defb &81
+defb &6
+defb &C1
+defb &41
+defb &F,&2
+defb &41
+defb &C2
+defb &7
+defb &A1
+defb &F4
+defb &81
+defb &C1
+defb &7
+defb &2F,&2
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &5
+defb &A1
+defb &B5
+defb &11
+defb &B2
+defb &F2
+defb &B1
+defb &6
+defb &33
+defb &21
+defb &10,&7
+defb &3
+defb &31
+defb &21
+defb &5
+defb &22
+defb &4
+defb &23
+defb &4
+defb &22
+defb &F,&3
+defb &C1
+defb &41
+defb &5
+defb &81
+defb &F,&2
+defb &81
+defb &C2
+defb &2
+defb &24
+defb &1
+defb &A1
+defb &F4
+defb &1
+defb &10,&70
+
+defb &1
+defb &25
+defb &F,&1d
+defb &74
+defb &32
+defb &10,&D
+defb &F2
+defb &10,&57
+defb &5
+defb &21
+defb &20,&B,&B
+defb &2
+defb &31
+defb &2
+defb &31
+defb &21
+defb &F,&12
+defb &81
+defb &5
+defb &10,&60
+defb &5
+defb &C1
+defb &F,&1
+defb &10,&E0
+defb &42
+defb &6
+defb &F5
+defb &1
+defb &10,&70
+defb &A
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &5
+defb &B2
+defb &32
+defb &11
+defb &2
+defb &B2
+defb &F1
+defb &10,&27
+defb &6
+defb &11
+defb &32
+defb &21
+defb &2
+defb &31
+defb &2
+defb &31
+defb &21
+defb &5
+defb &2F,&0
+defb &E
+defb &C1
+defb &5
+defb &81
+defb &41
+defb &5
+defb &C1
+defb &F,&1
+defb &C1
+defb &10,&E0
+defb &6
+defb &10,&33
+
+defb &A1
+defb &F2
+defb &51
+defb &10,&E0
+defb &3
+defb &22
+defb &F,&1e
+defb &72
+defb &30,&3,&E,&D
+
+defb &F1
+defb &72
+defb &7
+defb &10,&E
+defb &22
+defb &3
+defb &21
+defb &32
+defb &21
+defb &F,&14
+defb &41
+defb &5
+defb &81
+defb &6
+defb &C1
+defb &F,&1
+defb &10,&E0
+
+defb &41
+defb &4
+defb &A1
+defb &10,&33
+
+defb &A1
+defb &F2
+defb &A1
+defb &10,&E0
+defb &A
+defb &22
+defb &4
+defb &22
+defb &4
+defb &21
+defb &9
+defb &22
+defb &4
+defb &21
+defb &4
+defb &22
+defb &5
+defb &30,&2F,&9,&8F
+
+defb &11
+defb &B4
+defb &9
+defb &10,&B
+defb &32
+defb &1
+defb &22
+defb &31
+defb &21
+defb &5
+defb &2F,&0
+defb &F,&0
+defb &10,&60
+defb &5
+defb &C1
+defb &6
+defb &41
+defb &F,&1
+defb &81
+defb &41
+defb &4
+defb &A1
+defb &10,&33
+
+defb &A1
+defb &F2
+defb &51
+defb &10,&C0
+defb &3
+defb &22
+defb &F,&1e
+defb &20,&17,&E
+defb &72
+defb &20,&D,&7F
+
+defb &51
+defb &8
+defb &21
+defb &40,&7,&B,&8,&7
+
+defb &31
+defb &F,&15
+defb &81
+defb &41
+defb &5
+defb &41
+defb &5
+defb &10,&60
+defb &F,&6
+defb &A1
+defb &F5
+defb &A1
+defb &10,&C0
+defb &A
+defb &22
+defb &4
+defb &22
+defb &4
+defb &10,&2
+
+defb &21
+defb &5
+defb &2F,&1
+defb &3
+defb &21
+defb &10,&B
+
+defb &31
+defb &B3
+defb &11
+defb &B3
+defb &23
+defb &3
+defb &23
+defb &1
+defb &50,&D,&E,&8,&B,&3
+defb &2F,&5
+defb &2
+defb &23
+defb &4
+defb &23
+defb &4
+defb &10,&60
+defb &2
+defb &20,&2,&60
+
+defb &1
+defb &23
+defb &20,&80,&10
+defb &23
+defb &7
+defb &25
+defb &4
+defb &A1
+defb &F5
+defb &51
+defb &5
+defb &22
+defb &F,&1d
+defb &21
+defb &11
+defb &32
+defb &73
+defb &10,&D
+defb &72
+defb &A
+defb &30,&E,&D,&8
+
+defb &11
+defb &32
+defb &F,&17
+defb &81
+defb &41
+defb &4
+defb &81
+defb &6
+defb &81
+defb &F,&5
+defb &A1
+defb &F5
+defb &A1
+defb &C
+defb &22
+defb &4
+defb &22
+defb &4
+defb &25
+defb &1
+defb &2F,&6
+defb &1
+defb &10,&E
+defb &B2
+defb &10,&3F
+
+defb &11
+defb &B3
+defb &2C
+defb &10,&B
+defb &32
+defb &20,&E,&4
+defb &2F,&b
+defb &2
+defb &26
+defb &1
+defb &22
+defb &1
+defb &10,&60
+
+defb &1
+defb &22
+defb &1
+defb &C1
+defb &2
+defb &23
+defb &10,&C0
+
+defb &1
+defb &24
+defb &3
+defb &26
+defb &5
+defb &A1
+defb &F4
+defb &52
+defb &5
+defb &22
+defb &F,&1d
+defb &21
+defb &31
+defb &72
+defb &F1
+defb &72
+defb &20,&E,&57
+defb &B
+defb &31
+defb &10,&6
+defb &2
+defb &31
+defb &2
+defb &11
+defb &F,&18
+defb &81
+defb &41
+defb &4
+defb &C1
+defb &6
+defb &41
+defb &F,&2
+defb &10,&B8
+defb &F5
+defb &A1
+defb &8
+defb &2F,&11
+defb &1
+defb &23
+defb &2
+defb &24
+defb &1
+defb &B4
+defb &F1
+defb &10,&2F
+
+defb &21
+defb &B2
+defb &11
+defb &26
+defb &1
+defb &23
+defb &10,&4
+defb &34
+defb &11
+defb &2
+defb &31
+defb &2C
+defb &4
+defb &2F,&8
+defb &1
+defb &10,&60
+defb &22
+defb &2
+defb &10,&30
+defb &23
+defb &1
+defb &10,&E0
+
+defb &1
+defb &29
+defb &2
+defb &21
+defb &2
+defb &C2
+defb &41
+defb &F4
+defb &52
+defb &1
+defb &27
+defb &F,&1c
+defb &72
+defb &F3
+defb &72
+defb &21
+defb &72
+defb &C
+defb &21
+defb &34
+defb &2
+defb &32
+defb &F,&1a
+defb &81
+defb &5
+defb &41
+defb &6
+defb &C1
+defb &D
+defb &C4
+defb &A1
+defb &F3
+defb &A1
+defb &B
+defb &27
+defb &1
+defb &29
+defb &1
+defb &23
+defb &4
+defb &2F,&0
+defb &10,&8C
+defb &F4
+defb &10,&2F
+
+defb &21
+defb &B2
+defb &1
+defb &25
+defb &3
+defb &22
+defb &2
+defb &10,&3
+
+defb &21
+defb &2
+defb &21
+defb &32
+defb &23
+defb &2
+defb &2F,&a
+defb &1
+defb &25
+defb &1
+defb &23
+defb &2
+defb &41
+defb &23
+defb &10,&80
+
+defb &41
+defb &24
+defb &1
+defb &10,&E0
+defb &2A
+defb &10,&80
+defb &C4
+defb &51
+defb &F2
+defb &53
+defb &1
+defb &24
+defb &2
+defb &21
+defb &F,&1c
+defb &71
+defb &F4
+defb &72
+defb &10,&4E
+
+defb &51
+defb &D
+defb &20,&B,&1
+
+defb &21
+defb &33
+defb &11
+defb &F,&1a
+defb &10,&60
+defb &4
+defb &10,&60
+defb &7
+defb &81
+defb &C1
+defb &8
+defb &C5
+defb &A5
+defb &A
+defb &21
+defb &2
+defb &21
+defb &2
+defb &22
+defb &3
+defb &25
+defb &3
+defb &21
+defb &7
+defb &22
+defb &3
+defb &21
+defb &3
+defb &21
+defb &4
+defb &10,&AE
+defb &F4
+defb &20,&2F,&8E
+
+defb &11
+defb &4
+defb &21
+defb &8
+defb &22
+defb &10,&1
+defb &33
+defb &21
+defb &11
+defb &6
+defb &25
+defb &5
+defb &21
+defb &2
+defb &21
+defb &5
+defb &10,&2
+
+defb &21
+defb &3
+defb &23
+defb &3
+defb &21
+defb &4
+defb &81
+defb &41
+defb &4
+defb &81
+defb &41
+defb &6
+defb &C2
+defb &41
+defb &1
+defb &22
+defb &4
+defb &C6
+defb &53
+defb &10,&F1
+
+defb &1
+defb &26
+defb &F,&1c
+defb &21
+defb &F4
+defb &73
+defb &10,&4E
+
+defb &51
+defb &D
+defb &21
+defb &3
+defb &32
+defb &10,&D
+
+defb &11
+defb &F,&1c
+defb &10,&60
+defb &4
+defb &81
+defb &6
+defb &C2
+defb &41
+defb &7
+defb &C7
+defb &10,&A2
+defb &C2
+defb &F,&7
+defb &21
+defb &F,&c
+defb &10,&AE
+defb &F4
+defb &20,&2F,&8E
+
+defb &11
+defb &E
+defb &31
+defb &10,&4
+defb &20,&E,&E
+
+defb &11
+defb &9
+defb &21
+defb &F,&13
+defb &81
+defb &5
+defb &C1
+defb &5
+defb &C2
+defb &41
+defb &6
+defb &81
+defb &CB
+defb &2
+defb &10,&2
+defb &22
+defb &F,&1d
+defb &71
+defb &F4
+defb &72
+defb &31
+defb &10,&4E
+defb &F,&0
+defb &21
+defb &10,&9
+
+defb &1
+defb &34
+defb &F,&1e
+defb &C1
+defb &5
+defb &C1
+defb &4
+defb &81
+defb &C1
+defb &7
+defb &81
+defb &CA
+defb &42
+defb &F,&22
+defb &B2
+defb &F4
+defb &20,&27,&7
+defb &F,&1
+defb &10,&3
+
+defb &11
+defb &32
+defb &11
+defb &31
+defb &F,&1f
+defb &C1
+defb &5
+defb &C1
+defb &C
+defb &81
+defb &CB
+defb &81
+defb &B
+defb &10,&1
+
+defb &21
+defb &F,&14
+defb &72
+defb &F3
+defb &72
+defb &11
+defb &10,&47
+defb &F,&1
+defb &10,&7
+defb &22
+defb &10,&B
+
+defb &31
+defb &F,&20
+defb &C1
+defb &4
+defb &81
+defb &C1
+defb &B
+defb &81
+defb &CA
+defb &43
+defb &9
+defb &22
+defb &1
+defb &12
+defb &2
+defb &10,&3
+
+defb &31
+defb &2
+defb &31
+defb &60,&D,&8,&1,&6,&7,&E
+defb &D
+defb &A1
+defb &B3
+defb &F3
+defb &10,&27
+
+defb &B1
+defb &F,&2
+defb &20,&E,&4
+defb &33
+defb &11
+defb &F,&20
+defb &41
+defb &F,&1
+defb &81
+defb &CB
+defb &81
+defb &B
+defb &10,&D
+
+defb &21
+defb &3
+defb &20,&E,&1
+
+defb &21
+defb &33
+defb &10,&1
+defb &20,&3,&3
+defb &20,&6,&6
+defb &D
+defb &21
+defb &31
+defb &72
+defb &F2
+defb &72
+defb &11
+defb &31
+defb &E
+defb &22
+defb &1
+defb &22
+defb &11
+defb &22
+defb &32
+defb &11
+defb &F,&20
+defb &81
+defb &41
+defb &F,&1
+defb &CA
+defb &43
+defb &9
+defb &22
+defb &31
+defb &12
+defb &3
+defb &31
+defb &2
+defb &20,&7,&B
+defb &00,&3,&3
+defb &20,&6,&6
+defb &E
+defb &31
+defb &B3
+defb &F2
+defb &10,&27
+
+defb &B1
+defb &E
+defb &21
+defb &12
+defb &30,&6,&3,&D
+defb &12
+defb &F,&21
+defb &10,&60
+defb &F,&0
+defb &81
+defb &C9
+defb &82
+defb &B
+defb &10,&D
+
+defb &21
+defb &4
+defb &31
+defb &2
+defb &00,&5,&3
+defb &20,&6,&6
+defb &D
+defb &31
+defb &10,&E
+
+defb &71
+defb &F2
+defb &72
+defb &12
+defb &E
+defb &21
+defb &10,&B
+defb &32
+defb &21
+defb &12
+defb &31
+defb &10,&E
+defb &F,&22
+defb &C1
+defb &2
+defb &10,&E0
+defb &4
+defb &10,&70
+defb &6
+defb &C8
+defb &44
+defb &A
+defb &10,&E
+
+defb &11
+defb &4
+defb &31
+defb &2
+defb &00,&5,&3
+defb &20,&6,&6
+defb &D
+defb &B1
+defb &10,&D
+defb &B2
+defb &F2
+defb &B1
+defb &12
+defb &F,&0
+defb &20,&B,&D
+defb &13
+defb &33
+defb &F,&25
+defb &C2
+defb &41
+defb &2
+defb &81
+defb &C2
+defb &6
+defb &81
+defb &C7
+defb &83
+defb &C
+defb &31
+defb &5
+defb &31
+defb &2
+defb &00,&5,&3
+defb &20,&6,&6
+defb &C
+defb &30,&4E,&B,&4F
+defb &F2
+defb &10,&1F
+defb &F,&1
+defb &10,&6
+defb &33
+defb &23
+defb &32
+defb &F,&25
+defb &C2
+defb &41
+defb &2
+defb &81
+defb &C2
+defb &8
+defb &C5
+defb &44
+defb &1
+defb &41
+defb &A
+defb &31
+defb &5
+defb &31
+defb &2
+defb &20,&3,&2
+defb &20,&3,&3
+
+defb &31
+defb &2
+defb &32
+defb &D
+defb &20,&AE,&7
+
+defb &31
+defb &B2
+defb &F1
+defb &B2
+defb &F,&1
+defb &20,&6,&3
+
+defb &31
+defb &23
+defb &10,&B
+
+defb &11
+defb &F,&24
+defb &C2
+defb &41
+defb &2
+defb &81
+defb &C2
+defb &C
+defb &C1
+defb &82
+defb &2
+defb &81
+defb &B
+defb &31
+defb &5
+defb &31
+defb &2
+defb &31
+defb &3
+defb &20,&3,&3
+
+defb &31
+defb &2
+defb &21
+defb &11
+defb &D
+defb &73
+defb &31
+defb &10,&E
+
+defb &71
+defb &F2
+defb &72
+defb &51
+defb &F,&0
+defb &31
+defb &10,&2
+
+defb &31
+defb &23
+defb &10,&D
+
+defb &11
+defb &F,&24
+defb &10,&E0
+defb &4
+defb &10,&70
+defb &F,&2
+defb &42
+defb &A
+defb &31
+defb &5
+defb &31
+defb &2
+defb &31
+defb &3
+defb &20,&3,&3
+
+defb &31
+defb &2
+defb &21
+defb &11
+defb &D
+defb &B3
+defb &31
+defb &11
+defb &B2
+defb &F3
+defb &B2
+defb &11
+defb &E
+defb &31
+defb &20,&6,&E
+defb &12
+defb &32
+defb &11
+defb &F,&37
+defb &41
+defb &3
+defb &C2
+defb &82
+defb &A
+defb &31
+defb &5
+defb &31
+defb &2
+defb &31
+defb &3
+defb &20,&3,&3
+
+defb &31
+defb &2
+defb &21
+defb &11
+defb &D
+defb &74
+defb &10,&D
+
+defb &71
+defb &F3
+defb &72
+defb &10,&7
+defb &D
+defb &21
+defb &12
+defb &1
+defb &13
+defb &10,&7
+
+defb &31
+defb &F,&37
+defb &82
+defb &C4
+defb &42
+defb &A
+defb &31
+defb &4
+defb &20,&E,&1
+
+defb &31
+defb &3
+defb &10,&3
+defb &33
+defb &2
+defb &21
+defb &11
+defb &D
+defb &B2
+defb &20,&BF,&B
+
+defb &B1
+defb &F3
+defb &10,&2F
+
+defb &11
+defb &E
+defb &21
+defb &10,&D
+
+defb &1
+defb &32
+defb &22
+defb &11
+defb &31
+defb &F,&37
+defb &42
+defb &C4
+defb &82
+defb &8
+defb &11
+defb &20,&C,&8
+defb &2
+defb &60,&3,&B,&7,&8,&7,&E
+
+defb &11
+defb &2
+defb &32
+defb &C
+defb &21
+defb &71
+defb &F2
+defb &71
+defb &10,&B
+
+defb &71
+defb &F2
+defb &72
+defb &31
+defb &21
+defb &32
+defb &51
+defb &C
+defb &10,&B
+
+defb &1
+defb &22
+defb &11
+defb &20,&6,&7
+defb &F,&36
+defb &83
+defb &C3
+defb &43
+defb &7
+defb &31
+defb &20,&C,&C
+defb &F,&10
+defb &A1
+defb &B1
+defb &F2
+defb &B1
+defb &10,&B
+defb &B2
+defb &20,&BF,&7
+
+defb &31
+defb &B3
+defb &C
+defb &22
+defb &10,&D
+defb &12
+defb &1
+defb &32
+defb &11
+defb &F,&36
+defb &42
+defb &C5
+defb &81
+defb &8
+defb &31
+defb &20,&D,&E
+defb &F,&10
+defb &21
+defb &71
+defb &F2
+defb &72
+defb &21
+defb &10,&CF
+defb &72
+defb &10,&B
+
+defb &31
+defb &74
+defb &51
+defb &A
+defb &10,&6
+defb &34
+defb &1
+defb &34
+defb &21
+defb &32
+defb &10,&6
+defb &F,&30
+defb &83
+defb &C3
+defb &42
+defb &8
+defb &21
+defb &33
+defb &11
+defb &F,&10
+defb &A1
+defb &B1
+defb &F2
+defb &B1
+defb &10,&B
+defb &B2
+defb &30,&3F,&D,&2F
+defb &B5
+defb &11
+defb &9
+defb &31
+defb &10,&6
+
+defb &31
+defb &2
+defb &33
+defb &30,&9,&7,&E
+
+defb &11
+defb &F,&30
+defb &41
+defb &C5
+defb &81
+defb &9
+defb &33
+defb &F,&11
+defb &21
+defb &71
+defb &F2
+defb &72
+defb &21
+defb &30,&CF,&1F,&E
+defb &72
+defb &F1
+defb &75
+defb &51
+defb &8
+defb &31
+defb &10,&D
+defb &20,&9,&9
+defb &10,&D
+
+defb &11
+defb &32
+defb &11
+defb &33
+defb &11
+defb &F,&2e
+defb &83
+defb &C3
+defb &41
+defb &A
+defb &10,&E
+
+defb &11
+defb &F,&12
+defb &B1
+defb &F2
+defb &B1
+defb &30,&B,&EF,&7
+
+defb &31
+defb &B3
+defb &F3
+defb &B5
+defb &7
+defb &21
+defb &10,&D
+
+defb &21
+defb &32
+defb &1
+defb &10,&D
+
+defb &1
+defb &32
+defb &1
+defb &33
+defb &1
+defb &31
+defb &F,&2a
+defb &13
+defb &1
+defb &42
+defb &C3
+defb &3
+defb &13
+defb &6
+defb &31
+defb &F,&13
+defb &71
+defb &F2
+defb &72
+defb &21
+defb &20,&DF,&17
+
+defb &31
+defb &72
+defb &F5
+defb &73
+defb &31
+defb &8
+defb &31
+defb &22
+defb &32
+defb &11
+defb &10,&E
+
+defb &21
+defb &2
+defb &21
+defb &32
+defb &20,&9,&7
+defb &F,&27
+defb &24
+defb &3
+defb &82
+defb &41
+defb &2
+defb &42
+defb &24
+defb &F,&19
+defb &B2
+defb &20,&9F,&B
+defb &B2
+defb &10,&B
+defb &B2
+defb &F7
+defb &B2
+defb &11
+defb &10,&27
+defb &6
+defb &10,&6
+defb &2
+defb &20,&B,&C
+
+defb &1
+defb &32
+defb &4
+defb &33
+defb &11
+defb &F,&25
+defb &16
+defb &6
+defb &82
+defb &1
+defb &14
+defb &F,&19
+defb &30,&DF,&4F,&D
+defb &73
+defb &21
+defb &72
+defb &F7
+defb &31
+defb &10,&1B
+defb &72
+defb &51
+defb &8
+defb &31
+defb &10,&C
+defb &12
+defb &10,&E
+
+defb &11
+defb &33
+defb &1
+defb &34
+defb &11
+defb &F,&23
+defb &25
+defb &3
+defb &81
+defb &3
+defb &C2
+defb &42
+defb &2
+defb &22
+defb &F,&19
+defb &30,&AE,&8F,&D
+defb &B2
+defb &20,&B,&2F
+
+defb &B1
+defb &F5
+defb &10,&8F
+
+defb &11
+defb &B4
+defb &8
+defb &31
+defb &20,&D,&D
+defb &10,&E
+
+defb &11
+defb &33
+defb &11
+defb &32
+defb &11
+defb &32
+defb &F,&23
+defb &13
+defb &5
+defb &43
+defb &C3
+defb &81
+defb &4
+defb &11
+defb &F,&19
+defb &21
+defb &73
+defb &10,&D
+defb &73
+defb &21
+defb &7A
+defb &10,&D
+defb &73
+defb &8
+defb &31
+defb &20,&D,&D
+defb &10,&E
+
+defb &11
+defb &33
+defb &11
+defb &32
+defb &11
+defb &32
+defb &F,&22
+defb &23
+defb &F,&2
+defb &21
+PicEyeCatch_Yumipng_rledataEnd: defb 0
+
+
+RLE_ImageWidth equ 38
+RLE_Draw:
+  		ld a,ixh
+		ld (ImageWidthA_Plus1-1),a
+		ld (ImageWidthB_Plus2-2),a
+		ld (ImageWidthC_Plus1-1),a
+		ld (ImageWidthD_Plus2-2),a
+		ld (ImageWidthE_Plus1-1),a
+		cpl
+		inc a
+		ld (NegativeImageWidth_Plus2-2),a
+		ld a,d
+		ld (RLE_LastByteH_Plus1-1),a
+		ld a,e
+		ld (RLE_LastByteL_Plus1-1),a
+	push hl
+		ld a,IXL
+		ld h,&C0
+		LD L,a
+		ld a,b
+				ld de,&FFFF :NegativeImageWidth_Plus2
+		or a
+RLE_DrawGetNextLine:
+		jr z,RLE_DrawGotLine
+		call RLE_NextScreenLineHL
+		add hl,de
+		dec a
+		jr RLE_DrawGetNextLine
+RLE_DrawGotLine:
+		ld (RLE_ScrPos_Plus2-2),hl
+	;	xor a
+				ld iyl,RLE_ImageWidth :ImageWidthA_Plus1
+		ld a,255
+		ld e,a
+		;ld (Nibble_Plus1-1),a
+	pop hl
+
+
+RLE_MoreBytesLoop:
+
+	inc hl
+	ld a,(hl)
+	ld b,a
+	or a
+	jp z,RLE_OneByteData
+	and %00001111
+	jp z,RLE_PlainBitmapData
+	ld ixh,0
+	ld ixl,a
+
+	;we're doing Nibble data, Expand the data into two pixels of Mode 1 and duplicate
+
+	ld a,b
+	and %00110000
+	rrca
+	rrca
+	ld c,a
+	ld a,b
+	and %11000000
+	or c
+	ld c,a
+	rrca	;Remove these for Left->right
+	rrca
+	or c
+	ld c,a
+
+	ld a,ixl
+	cp 15
+	jp nz,RLE_NoMoreNibbleBytes
+	push de
+RLE_MoreNibbleBytes:
+		inc hl
+		ld a,(hl)
+		ld d,0
+		ld e,a
+		add ix,de
+		cp 255
+		jp z,RLE_MoreNibbleBytes
+	pop de
+
+RLE_NoMoreNibbleBytes:
+
+
+	ld a,e
+	or a
+	jp z,RLE_MoreBytesPart2Flip
+
+
+	ld a,ixl
+	cp 4
+	call nc,RLE_ByteNibbles
+
+
+
+	xor a
+	ld d,a ;byte for screen
+	push hl
+	ld hl,&C050 :RLE_ScrPos_Plus2
+	ld b,iyl
+RLE_MoreBytes:
+	ld a,c
+	and %00110011
+	or d
+	ld d,a
+	dec ix
+	ld a,ixl
+	or ixh
+	jr z,RLE_LastByteFlip
+
+
+RLE_MoreBytesPart2:
+	ld a,c
+	and %11001100
+	or d
+	ld d,a
+
+	dec ix
+
+		ld (hl),d
+		dec hl
+		dec b
+		call z,RLE_NextScreenLineHL
+
+	xor a
+	ld d,a ;byte for screen
+
+	ld a,ixl
+	or ixh
+	jr nz,RLE_MoreBytes
+
+RLE_LastByte:
+	ld iyl,b
+	ld (RLE_ScrPos_Plus2-2),hl
+	pop hl
+;	ld iyl,b
+	ld a,&00:RLE_LastByteH_Plus1
+	cp h
+	jp nz,RLE_MoreBytesLoop
+
+	ld a,&00:RLE_LastByteL_Plus1
+	cp l
+	jp nz,RLE_MoreBytesLoop
+
+
+
+
+	exx 			;keep the firmware working!
+	pop bc
+	exx
+
+	ret
+RLE_LastByteFlip:
+	ld a,e
+	cpl
+	ld e,a
+	jp RLE_LastByte
+RLE_MoreBytesPart2Flip:
+	push hl
+	ld b,iyl
+	ld hl,(RLE_ScrPos_Plus2-2)
+	ld a,e
+	cpl
+	ld e,a
+	jp RLE_MoreBytesPart2
+
+RLE_NextScreenLineHL:
+	push de
+				ld b,RLE_ImageWidth :ImageWidthE_Plus1
+		ld de,&800+RLE_ImageWidth :ImageWidthD_Plus2
+		add hl,de
+	pop de
+	ret nc
+	push de
+		ld de,&c050
+		add hl,de
+	pop de
+	ret
+
+RLE_NextScreenLine:
+	push hl
+		ld iyl,RLE_ImageWidth :ImageWidthC_Plus1
+		ld hl,&800+RLE_ImageWidth :ImageWidthB_Plus2
+		add hl,de
+		ex hl,de
+	pop hl
+	ret nc
+	push hl
+		ld hl,&c050
+		add hl,de
+		ex hl,de
+	pop hl
+	ret
+
+RLE_PlainBitmapData:
+	push de
+		ld a,(hl)
+		rrca
+		rrca
+		rrca
+		rrca
+		ld b,0
+		ld c,a
+
+		cp 15
+		jp nz,RLE_PlainBitmapDataNoExtras
+	;More than 14 bytes, load an extra byte into the count
+RLE_PlainBitmapDataHasExtras:
+		inc hl
+		ld a,(hl)
+		or a
+		jr z,RLE_PlainBitmapDataNoExtras	; no more bytes
+		push hl
+			ld h,0
+			ld l,a
+			add hl,bc
+			ld b,h
+			ld c,l
+		pop hl
+
+		cp 255
+		jr z,RLE_PlainBitmapDataHasExtras
+RLE_PlainBitmapDataNoExtras:
+
+	
+		ld de,(RLE_ScrPos_Plus2-2)
+		RLE_PlainBitmapData_More:
+		inc hl
+		ld a,(hl)
+		ld (de),a
+		dec de
+
+
+
+		dec iyl
+		call z,RLE_NextScreenLine
+		dec bc
+		ld a,b
+		or c
+		jp nz,RLE_PlainBitmapData_More
+
+		ld (RLE_ScrPos_Plus2-2),de
+;ret
+	pop de
+	jp RLE_MoreBytesLoop
+
+RLE_OneByteData:
+	push de
+		xor a 
+		ld b,a
+		ld c,a
+RLE_OneByteDataExtras:
+		inc hl
+		ld a,(hl)
+		push hl
+			ld h,0
+			ld l,a
+			add hl,bc
+			ld b,h
+			ld c,l
+		pop hl
+
+		cp 255
+		jp z,RLE_OneByteDataExtras
+
+		inc hl
+		ld a,(hl)
+		ld (RLE_ThisOneByte_Plus1-1),a
+
+
+		ld de,(RLE_ScrPos_Plus2-2)
+RLE_OneByteData_More:
+		ld a,00:RLE_ThisOneByte_Plus1
+		ld (de),a
+		dec de
+		dec iyl
+		call z,RLE_NextScreenLine
+
+
+
+
+		dec bc
+		ld a,b
+		or c
+		jp nz,RLE_OneByteData_More
+
+		ld (RLE_ScrPos_Plus2-2),de
+		;ret
+
+	pop de
+	jp RLE_MoreBytesLoop
+RLE_ByteNibbles:
+	di
+	ld a,c
+	exx
+	ld b,iyl
+	ld c,a
+	ld d,ixh
+	ld e,ixl
+		ld hl,(RLE_ScrPos_Plus2-2)
+RLE_ByteNibblesMore3:
+		ld a,3
+RLE_ByteNibblesMore:
+		ld (hl),c
+		dec hl 
+		dec b;iyl
+		call z,RLE_NextScreenLineHL
+
+		dec de
+		dec de
+		cp e
+		jp c,RLE_ByteNibblesMore
+
+		ld a,d
+		or a
+		jp nz,RLE_ByteNibblesMore3
+
+	ld (RLE_ScrPos_Plus2-2),hl
+	ld iyl,b
+	ld ixh,d
+	ld ixl,e
+	exx
+
+ret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GetDialog:
+ld bc,Dialog
+ret
+Dialog:
+;     1234567890123456789012345678901234567890
+db 253,"Name : Yume Yuusha"," "+&80
+db 253,"Class: Warrior & Strategist"," "+&80
+db 253," "," "+&80
+db 253,"A technical genious and millitary"," "+&80
+db 253,"strategist of sorts. Unfortunately his"," "+&80
+db 253,"main priority seems to be the personal"," "+&80
+db 253,"pride of victory, not actually saving"," "+&80
+db 253,"those in need."," "+&80
+db 253," "," "+&80
+db 253,"A firm believer that 'The sword is an"," "+&80
+db 253,"elegant weapon of a more civilized age'"," "+&80
+db 253,"but sees no reason not to play it safe,"," "+&80
+db 253,"so he carries a 'Cobra Assault Cannon'"," "+&80
+db 253,"at all times!"," "+&80
+db 0 
+
+limit &BF00
+LastByte:defb 1
+save "..\lz48\T51-SC3.D02",FirstByte,LastByte-FirstByte
+

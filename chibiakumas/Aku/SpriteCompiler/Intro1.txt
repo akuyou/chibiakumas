@@ -1,0 +1,8 @@
+bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Photo1..bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Photo2..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Fishing..bmp
+bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Camping..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Prank..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_School1..bmp
+diff,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_School2..bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_School1..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Bulbs..bmp
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Plane..bmp

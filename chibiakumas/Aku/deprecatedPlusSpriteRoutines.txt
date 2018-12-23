@@ -1,0 +1,112 @@
+Plus_CopySprite:
+; b Sprite Num
+; a Source bank
+; hl = Source memory Loc
+	push af
+		ld a,b
+		ld e,0
+		add &40
+		ld d,a
+
+		ld a,(BankSwitch_128k_Current_Plus1-1)	; The memory bank used by the main game loop
+		ld i,a
+	pop af
+	LD B,&7F ;Gate array port
+	or %11000000 ;Switch to Ram config
+	OUT (C),A ;Send it
+
+
+
+			ld bc,&7fb8	;turn Plus Asic on
+			out (c),c
+			;ld bc,&0100
+			ld b,&20
+
+			ld (Plus_CopySprite_StackRestore_Plus2-2),sp
+			ld sp,hl
+			ex hl,de
+Plus_CopySprite_Loop:
+			pop de
+			ld (hl),e
+			inc l
+			ld (hl),d
+			inc l
+			pop de
+			ld (hl),e
+			inc l
+			ld (hl),d
+			inc l
+			pop de
+			ld (hl),e
+			inc l
+			ld (hl),d
+			inc l
+			pop de
+			ld (hl),e
+			inc l
+			ld (hl),d
+			inc l
+			dec b
+			jp nz,Plus_CopySprite_Loop
+			ld sp,&0000:Plus_CopySprite_StackRestore_Plus2
+
+
+			;ldir
+
+			ld bc,&7fa0 ;turn asic off
+			out (c),c
+
+		ld a,i
+		;LD BC,&7F00 ;Gate array port
+		or %11000000 ; Switch memory
+		OUT (C),A ;Send it
+	
+ret
+
+
+CoreExt_PlusSpriteSwap:
+
+	ld b,4
+NextSpriteSwapper:
+	push bc
+		ld a,b
+		dec a
+		ld b,a
+		add &20	:PlusSpriteOffset_Plus1
+		ld h,a
+		ld l,&0
+		ld a,2
+; b Sprite Num
+; a Source bank
+		;ld de,&C000	;temp mem loc (in mainmem)
+		di
+		call Plus_CopySprite
+		ei
+	pop bc
+	djnz NextSpriteSwapper
+
+	;ld a,(PlusSpriteOffset_Plus1-1)
+	;cp &20
+	;jr z,NextSpriteSwapper_Set2
+	;cp &20+4
+	;jr z,NextSpriteSwapper_Set1
+	;cp &20+8
+	;jr z,NextSpriteSwapper_Set4
+	;cp &20+12
+	;jr z,NextSpriteSwapper_Set3
+NextSpriteSwapper_Set1:	
+	;ld a,&20
+	;jr NextSpriteSwapper_Update
+NextSpriteSwapper_Set2:
+	;ld a,&20+4
+NextSpriteSwapper_Set3:	
+	;ld a,&20+8
+	;jr NextSpriteSwapper_Update
+NextSpriteSwapper_Set4:
+	;ld a,&20+12
+
+
+NextSpriteSwapper_Update:
+	;ld (PlusSpriteOffset_Plus1-1),a
+ret
+

@@ -1,0 +1,7 @@
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Lightning1..bmp
+diff,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Lightning2..bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Lightning1..bmp
+bmp ,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Gates2..bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Gates1..bmp
+bmp ,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Gates1..bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Gates2..bmp
+bmp ,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Photo2..bmp
+diff,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Photo1..bmp,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_Photo2..bmp
+bmp ,E:\Progs\CS_ImageConv\CS_ImageConv\Intro_haunting..bmp

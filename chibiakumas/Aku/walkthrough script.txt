@@ -1,0 +1,115 @@
+Hello!
+
+Introduce self - english moved to Japan.
+
+Technical content, see CPC4Ever magazine for more info
+
+Game inspired by japanese games - japanese language references in game
+
+Intro - limited to 64k graphical glitches.
+
+Game intro, surreal theme to play down content.
+Reason - Chibiko is the only vampire - so she has to do something exceptional
+
+Sprite compiler - wrote myself, doesn't really reduce size unless vertical lines are the same - but it's fast!
+
+Umbrella drink! not enough vampire references in the game - so had to add them to the intro!
+
+Loading screen - explaining the plot!
+
+-------------------------
+level 1 -
+
+backgrounds had to be very simple gradients, sprite drawing is slow, and I needed the speed for the bullets
+
+entire game is written around the CPC's lack of sprites (hence bullets - which are not sprites)... vertical scrolling to take advantage of the raster color capability - used plus sprites to hide the mode 1 4 color limitation.
+
+
+Boss 1
+
+Game sprites can be anysize, but they can only 'clip' (go offscreen) if they are 24 pixels, the skull boss is made up of 6 24pixel wide sprites to allow this to work - because it never goes off the bottom of the screen, the fact the sprites are not 24pixels tall are not a problem.
+
+This limitation no longer exists in episode 2 - sprites can be any size, provided they are square.
+
+----------------------
+
+Level 2
+Level 2 is the first level to use complex moving sprites. everything in Chibiakumas has to work at 8 bits for speed and memory limitations, this made movement of bullets and enemies very simple, but with some extra code I could bend the rules for more complex enemies like the jumping rabbit.
+
+In episode 1 this had to be done with machine code, Episode 2 has a new far more advanced "Animator" function, which makes for far less debugging.
+
+Background of level2 was supposed to look like trees - couldn't do what I wanted because of limitations of game engine - episode 2 can do repeating 32 pixel sprites, which would allow me to do this better.
+
+Boss 2
+uses the new more complex movements - heat seeking kiss attack - soutpark spoof characters.
+tail spells WTF - turns to hearts when hit - Zombichu likes being hurt!
+
+
+---------------
+
+level 3 - river
+playing with raster colors for 'submersion effect'
+
+Weapons reset each leve - wanted the game to be fun, didn't like games where losing a life lost your powerups
+
+Chibi Akumas was always supposed to be two player (hence the plurality of the title), however I was worried that it would be to much to attempt it for the first game, as I may end up releasing nothing.
+
+buggy fish!
+
+
+
+level 3 - boss
+wanted to mimic huge bosses on Nes/Gameboy, which used the 'tile layer' to fake a giant sprite, even though ChibiAkumas has not tile layer.
+Sawblade is supposed to be haging off the head of a giant 'angler fish' where the light would be.
+
+------------------
+
+Level 4 - caves
+using color switching like in megaman games - supposed to be defined by 'illuminating enemies'
+
+first level with walls that hurt.
+
+Big ghost had to be made up of 4 smaller sprites
+
+game play was supposed to follow a journey with chibiko going from her castle to the source of the problem.
+
+all the enemies have names - check out the website for info.
+
+White spirits come and go, Dark spirits will circle for ever
+
+Level 4 - vertical cave
+
+Inspired by xenon 2 
+
+the game engine doesn't really 'scroll' the enemies move in their own predefined direction, so the game can scroll just as easily vertically as horizontally - the only tricky bit is the background - and that the rastercolors do not work so well.
+
+Coins in ep 1 don't do anything - they give an extra powerup in ep2
+
+Levels do not have a map, each object comes on screen at a 'time' - saved memory.
+
+
+-----------
+
+Pre boss - note Necromancer does not say he's responsible, as far as he is concerned, Chibiko is the attacker who's come for him.
+
+----------
+
+Last boss battle - over 1000 bullets onscreen, used extra memory to increase onscreen bullets at same speed. 
+
+Compiled sprite background.
+
+First boss with a lifebar! only wrote the code at the last moment!
+
+Couldn't make as many bullets onscreen as I wanted, or make them as big as I wanted - limitations!
+
+Coffee time effect - it's coming next time!
+---------------
+End sequence!
+
+The moral of the story! Chibiko is bad, she brought all her problems on herself!
+
+Thanks for watching. Please check out CPC4eva (George Bachaelor)'s magazine, and continue to support my future projects - and others in retrogaming
+
+This game took 6 months to create - but that was working pretty much every single day.
+
+https://www.facebook.com/groups/1066160190075999/?ref=nf_target&fref=nf

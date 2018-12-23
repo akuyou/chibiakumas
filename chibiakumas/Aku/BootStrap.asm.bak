@@ -1,0 +1,4399 @@
+read "CoreDefs.asm"
+
+;ifndef  coredefined
+;read "Core.asm"
+;end if
+
+;Bank C4 - Level Sprites 3+4 / Level Compiled Sprites (7B00 - alternate (boss) music)
+;Bank C5 - Bootstrap Cache
+;Bank C6 - 128k Special screens / Font (F000)
+;Bank C7 - Level sprites (C000) / Vertical Sprites E800 / Bochan Plus sprites! (F800)
+
+DiskMap1 equ 1
+DiskMap2 equ 2
+DiskMap3 equ 3
+DiskMap4 equ 4
+
+
+limit Akuyou_LevelStart+&6500
+org Akuyou_BootStrapStart;&8000
+
+; The bootstrap is responsible for most loading, it will page in and start new levels when called
+; handle their distribution over the system memory and do title screens / game over and the like
+
+; depending on the command Control may not be returned, as this program wipes out the level code
+; however if needed the level will be restarted via its jumpblock
+
+; It loads into &4000, so cannot be used when the screen is page flipping
+
+; When the bootstrap is in memory, the Bitmap font will be available at &7000 
+; This is for the Main menu and similar
+
+; on the 464 it will be loaded in each time
+; in the 6128 it will be always in memory
+
+
+
+;Make Instructions:
+
+; Do not compile this directly, Compile Core.asm as it compiles this as well
+; Both must be compiled together, as Bootstrap points to locations in Core - you will get a crash otherwise!
+
+
+
+;mc_screen_offset equ &bd1f
+;scr_set_position equ &bd55
+;KeyboardScanner_Flush equ &BB03
+
+jp Bootstrap_Launch	; &4000
+jp Bootstrap_FromBasic	; &4003
+jp Bootstrap_FromHL	; &4006
+;jp Bootstrap_Reload	; &4009
+ifdef SupportPlus 
+	jp Bootstrap_ReloadPlusSprites	; &400C
+else
+	jp null
+endif
+
+
+
+Bootstrap_Launch:
+	ld bc,&7f8D	; Reset the firmware to OFF
+	out (c),c
+	ld hl,RasterColors_InitColors
+	call SetColors
+	
+	ld h,0
+	ld l,0
+Bootstrap_FromHL:
+
+	; HL is used as the bootstrap command
+	; H=1 means levels
+	; H=0 means system events (Menu etc)
+	ld a,h
+	or a
+	jr z,Bootstrap_SystemEvent
+	cp 1
+	jr z,Bootstrap_Level
+
+	; Bootstrap Level
+ret	
+Bootstrap_SystemEvent:
+	; Bootstrap System event
+	ld a,l
+	cp 0
+	jp z,BootsStrap_StartGame
+	cp 1
+	jp z,BootsStrap_ContinueScreen
+	cp 2
+	jp z,BootsStrap_ConfigureControls
+	cp 3
+	jp z,BootStrap_SaveSettings
+	cp 4
+	jp z,GameOverWin
+	cp 5
+	jp z,NewGame_EP2_1UP
+	cp 6
+	jp z,NewGame_EP2_2UP
+	cp 7
+	jp z,NewGame_EP2_2P
+	cp 8
+	jp z,NewGame_CheatStart
+ret
+Bootstrap_Level:
+	ld sp,&BFFF	; we are not returning, so reset the stack
+
+	; Load and start a level
+	ld a,l
+	cp 0
+	jp z,Bootstrap_Level_0Again
+
+
+	cp 1
+	jp z,Bootstrap_Level_1
+
+	cp 2
+	jp z,Bootstrap_Level_2
+	cp 3
+	jp z,Bootstrap_Level_3
+	cp 4
+	jp z,Bootstrap_Level_4
+	cp 5
+	jp z,Bootstrap_Level_5
+	cp 6
+	jp z,Bootstrap_Level_6
+	cp 7
+	jp z,Bootstrap_Level_7
+	cp 8
+	jp z,Bootstrap_Level_8
+	cp 9
+	jp z,Bootstrap_Level_9
+
+
+	cp 11
+	jp z,Bootstrap_Stage_11
+	cp 12
+	jp z,Bootstrap_Stage_12
+	cp 13
+	jp z,Bootstrap_Stage_13
+	cp 14
+	jp z,Bootstrap_Stage_14
+	cp 15
+	jp z,Bootstrap_Stage_15
+	cp 16
+	jp z,Bootstrap_Stage_16
+	cp 17
+	jp z,Bootstrap_Stage_17
+	cp 18
+	jp z,Bootstrap_Stage_18
+	cp 19
+	jp z,Bootstrap_Stage_19
+	cp 20
+	jp z,Bootstrap_Stage_20
+	cp 240
+	jp z,Bootstrap_Level_Ep2Intro
+	cp 241
+	jp z,Bootstrap_Level_Ep2EndIntro
+	cp 242
+	jp z,Bootstrap_Level_Ep2EndOutro
+	cp 250
+	jp z,Bootstrap_Level_EndIntro	;Shown before the last level
+	cp 251
+	jp z,Bootstrap_Level_EndOutro	; End Sequence
+	cp 252
+	jp z,Bootstrap_Level_Intro
+jp Bootstrap_Level_1 ;should never get here!
+
+Bootstrap_FromBasic:
+	ld l,(ix+0)	
+	ld h,(ix+1)
+	jp Bootstrap_FromHL
+
+;***************************************************************************************************
+
+;					Start Game
+
+;***************************************************************************************************
+
+Blackout64k:			;Blackout screen on 64k, do nothing on 128
+ifdef Support64k
+	ifdef debug
+		ret
+	endif
+
+	ifdef Support128k
+		ld a,(CPCVer)
+		and 128
+		ret nz
+	endif
+	ifndef debug
+		ld e,1
+		ld hl,RasterColors_Black
+		call RasterColors_NoDelay
+		ld hl,RasterColors_ZeroColors
+		call SetColors
+	endif
+endif
+ret
+BootsStrap_StartGame:
+
+	ld sp,&BFFF	; we are not returning, so reset the stack
+
+	;Border To black
+	ld a,1
+	ld b,0
+	ld c,b
+	call &bc38	; set border 0 to black
+	ifndef debug
+		;ld hl,RasterColors_InitColors
+		ld hl,RasterColors_ZeroColors
+		call SetColors
+	endif
+	;Load the game core - this is always in memory
+	ld hl,FileName_Core
+	ld de,Akuyou_CoreStart
+	call BootStrap_LoadDiskFile
+
+
+
+
+	call &BB57 ; VDU Disable
+
+	ld hl,FileName_Settings
+	ld de,SavedSettings
+	call BootStrap_LoadDiskFile
+
+	call &BB54 ; VDU enable
+
+
+
+
+	;wipe the CPC ver setting
+	xor a
+	ld (CPCVer),a
+
+
+
+	;Backup Disk operating system Vars here - Please add your own
+	;if you have special requirements
+	;please see Firmware_Restore in the core.asm file for the other half!
+
+
+
+
+	ld hl,(&be7d)	; get address where current drive number is held
+	ld a,(hl)	; get drive number
+	ld (FirwareRestoreDriveNo_Plus1-1),a
+	ld hl,(&BAFE)
+	ld (ParadosSettings_Plus2-2),hl
+;	ld hl,(&A700)
+;	ld (AmsDosDiskSettings_Plus2-2),hl
+
+	di
+	ld hl,(&bd37+1)				;Get the Restore High Jumpblock command
+	ld (FirmJumpLoc_Plus2-2),hl		; it's different on 464/6128 firmware!
+
+
+;test
+
+
+
+;Put some strange bytes at &4000 for us to detect!
+ld hl,&6669
+ld (&4000),hl
+
+ifdef SupportPlus
+	di
+	ld b,&bc
+	ld hl,PlusInitSequence
+	ld e,17
+PlusInitLoop:
+	ld a,(hl)
+	out (c),a
+	inc hl
+	dec e
+	jr nz,PlusInitLoop
+
+
+	ld a,&C1
+	call Akuyou_BankSwitch_C0_SetCurrent
+	;copy to the lower area.
+	ld bc,&100
+	ld hl,Plus_BankCopy
+	ld de,&C000
+	ldir
+	
+
+		ld bc,4
+		ld de,&FFD0;&2000
+		ld hl,&4000
+		call &C000
+
+		ld bc,&7fa0	; move the lower firmware back on a plus
+		out (c),c
+		ld bc,&7f8D	; Reset the firmware to OFF
+		out (c),c
+
+
+	;test 2 bytes from &4000 - if the asic has paged in they will not match main mem 
+
+	ld hl,&FFD0;&2000
+	ld de,&4000
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jp z,DetectedNonPlus ; non plus
+	inc hl
+	inc de
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jp z,DetectedNonPlus ; 
+
+	ld a,(CPCVer)
+	or 1
+	ld (CPCVer),a
+endif
+DetectedNonPlus:
+	ld a,&C0
+	call Akuyou_BankSwitch_C0_SetCurrent
+	ei
+
+
+	; reset location
+
+	ld a,&c0
+;	call SetScreenMemPos
+	ld hl,&0000
+	call &bd1f	;call mc_screen_offset
+
+	ld a,1
+	call &bc0e ;Scr_SetMode
+
+	ifndef AllowDisk2
+
+	ld a,&C0
+	ld hl,DiskMap_LoadingScreen
+	ld b,DiskMap_LoadingScreen_Size
+	ld c,DiskMap_LoadingScreen_Disk
+	ld de,&C000
+	ld ix,&C000+&4000-1;-8523
+	call Akuyou_LoadDiscSectorZ
+
+
+	endif
+
+
+
+	ld hl,RasterColors_InitColors
+	call SetColors
+
+;	call ScreenBackupC000
+
+
+
+ifdef Support128k
+	;test to see if we have multiple ram banks
+	di
+	ld a,&C7
+	ld bc,4
+	ld de,&FFD0;&2000
+	ld hl,&4000
+	call Akuyou_BankSwitch_C0_BankCopy 
+
+	ld hl,&FFD0;&2000
+	ld de,&4000
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jr nz,Detected128k ; 64 k only
+	inc hl
+	inc de
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jr nz,Detected128k ; 64 k only
+endif
+
+	; we detected a 64k system
+;	ld a,(CPCVer)
+;	or 0
+;	ld (CPCVer),a
+
+	ld a,&0D
+	ld (SetDiskMessagePos_Plus2-1),a
+
+
+	ld a,&C0
+	call BankSwitch_C0_SetCurrent
+
+	jp PlusLoad
+
+; Load 128k specific stuff
+ifdef Support128k
+Detected128k:
+	ld a,(CPCVer)
+	ifdef Support128k
+		or 128
+	else
+		or 0
+	endif 
+	ld (CPCVer),a
+
+
+
+
+	;test to see if we have multiple ram banks
+
+	;copy 4 bytes to bank D7 - if this works we have 256k
+	ld a,&D7
+	ld bc,4
+	ld de,&4000
+	ld hl,&0000
+	call Akuyou_BankSwitch_C0_BankCopy 
+
+	;copy 4 bytes from bank D7 - if this works we have 256k
+
+	ld a,&D7
+	ld bc,4
+	ld hl,&4000
+	ld de,&FFF0
+	call Akuyou_BankSwitch_C0_BankCopy 
+
+
+	ld hl,&FFF0;&2000
+	ld de,&0000
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jr nz,No256k ; Data Not Stored
+	inc hl
+	inc de
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jr nz,No256k ; Data Not Stored
+	
+	; if we got here - the data was stored - now see if C7 and D7 are the same thing!?
+	ld a,&C7
+	ld bc,4
+	ld hl,&4000
+	ld de,&FFF8
+	call Akuyou_BankSwitch_C0_BankCopy 
+
+
+	ld hl,&FFF0
+	ld de,&FFF8
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jr nz,Have256k ; Match
+	inc hl
+	inc de
+	ld a,(hl)
+	ld b,a
+	ld a,(de)
+	cp b
+	jr nz,Have256k ; Match
+	jr No256k
+Have256k:
+	ld a,(CPCVer)
+		or 64 ;128+64 = 256k system 
+	ld (CPCVer),a
+
+
+No256k:
+	ld a,&C0
+	call BankSwitch_C0_SetCurrent
+ei
+
+
+
+
+
+	;ld a,1
+;	ld hl,&7000
+;	ld bc,&1000
+;	ld de,&C000			; copy the font to bank 7 for ingame on the 6128 (464 will have to use firmware or reload)
+;	call Akuyou_BankSwitch_128k_BankCopy
+endif
+
+
+	ld a,Font_Membank
+	ld hl,DiskMap_Font		;T07-SC1.D00
+;	ld b,DiskMap_Font_Size
+	ld c,DiskMap_Font_Disk
+	ld de,Font_RegularSizePos
+	ld ix,Font_RegularSizePos-1+&1000
+
+	call Akuyou_LoadDiscSectorZ
+
+
+
+PlusLoad:
+ei
+ifdef SupportPlus
+	ld a,(CPCVer)
+	and 1
+	jp z,notaplus
+
+
+	ifdef AllowDisk2	;Plus sprites are on disk 1
+		jp notaplus
+	endif 
+
+	call Blackout64k
+
+	ld bc,15*2		;Snag a few bytes of temp space to copy the palette
+	ld hl,-15*2-4
+	add hl,sp
+	ex hl,de
+	push de
+		ld hl,PlusPaletteGame
+;	ld de,&C000
+		ldir
+	pop hl
+;	ld hl,&C000
+	di
+	call Plus_SetPalette
+	ei
+
+	call Bootstrap_ReloadPlusSprites
+di
+	call Plus_HideSprites
+ei
+	
+
+;	call ScreenRestoreC000
+endif
+NotAPlus:
+
+
+	ld a,&C0
+	call BankSwitch_C0_SetCurrent
+
+
+
+	ifdef Debug
+	ld l,12				; Show the 'Debug mode' message
+	ld bc,DebugBuild
+	call ShowTextLines
+	endif
+
+ifdef Support128k
+	ld a,&C6
+	ld hl,DiskMap_Screens
+	ld b,DiskMap_Screens_Size
+	ld c,DiskMap_Screens_Disk
+	ld de,&4000
+	ld ix,&4000+&3000
+	call Akuyou_LoadDiscSectorZ
+endif
+
+;Load in player sprites
+ifdef SupportPlus
+	ld a,(CPCVer)
+	and 1
+	jp nz,PlayerSpritesNotNeeded
+
+
+	ld a,&C0
+	ld hl,DiskMap_PlayerSprite
+	ld b,DiskMap_PlayerSprite_Size
+	ld c,DiskMap_PlayerSprite_Disk
+	ld de,Akuyou_PlayerSpritePos
+	ld ix,Akuyou_PlayerSpritePos+&800-1
+	call Akuyou_LoadDiscSectorz
+
+
+	;DiskMap_PlayerSpriteUD 		equ &06C3 ;T06-SC3.D00
+	ld a,&C7
+	ld hl,DiskMap_PlayerSpriteBo
+	ld c,0
+	ld de,&6800
+	ld ix,&6800+&1800
+	call Akuyou_LoadDiscSectorz
+
+	;DiskMap_PlayerSpriteUD 		equ &06C3 ;T06-SC3.D00
+;	ld a,&C7
+;	ld hl,DiskMap_PlayerSpriteBoUD
+;	ld c,0
+;	ld de,&7000
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C7
+;	ld hl,DiskMap_PlayerSpriteBO
+;	ld c,DiskMap_PlayerSpriteBo_Disk
+;	ld de,&7800
+;	call Akuyou_LoadDiscSector
+
+PlayerSpritesNotNeeded:
+endif
+
+
+
+	; load the 128k font
+
+	;ld a,1			;; bank number
+	;ld de,&C000		;; load address
+	;ld hl,FileName_Font
+	;call Akuyou_LoadDiskFileFromHLtoBankA
+
+	;ld hl,FileName_Font		; Loaded at &7000 for the 464 menus
+	;ld de,&7000
+	;call BootStrap_LoadDiskFile
+
+	;Load the music
+	call Bootstrap_MusicInit
+
+
+
+ifdef Support128k
+	; Copy the bootstrap to bank 5 - part 1
+	ld a,(CPCVer)
+	and 128
+	jr z,BootstrapBackup_Not128k
+
+	ld a,&C5
+	ld hl,&8000
+	ld bc,&4000
+	ld de,&4000		
+	call Akuyou_BankSwitch_C0_BankCopy
+BootstrapBackup_Not128k:
+endif
+
+
+
+	;bochanonly
+
+
+
+	;ld a,0*3
+	;call Akuyou_ShowCompiledSprite
+
+
+	call StartANewGame
+;	xor a
+;	call Akuyou_Player_CheatMode
+;	call Cheat_BochanOnly
+;	call Cheat_ChibikoOnly
+;	call Cheat_TwoPlayer
+
+;	jp GameOverWin
+;	jp GameOver
+
+	;Episode 1
+;	jp Bootstrap_Level_1
+;	jp Bootstrap_Level_2
+;	jp Bootstrap_Level_3
+;	jp Bootstrap_Level_4
+;	jp Bootstrap_Level_5
+;	jp Bootstrap_Level_6
+;	jp Bootstrap_Level_7
+;	jp Bootstrap_Level_8
+;	jp Bootstrap_Level_9
+;	JP Bootstrap_Level_EndIntro	;Shown before the last level
+;	JP Bootstrap_Level_EndOutro	; End Sequence
+;	JP Bootstrap_Level_Intro
+
+
+;	jp NewGame_EP2_2P
+;	jp Bootstrap_Stage_11
+;	jp Bootstrap_Stage_12
+;	jp Bootstrap_Stage_13
+;	jp Bootstrap_Stage_15
+;	jp Bootstrap_Stage_15
+;	jp Bootstrap_Stage_16
+;	jp Bootstrap_Stage_17
+;	jp Bootstrap_Stage_18
+;	jp Bootstrap_Stage_19
+;	jp Bootstrap_Stage_20
+;	jp Bootstrap_Level_Ep2Intro
+;	jp Bootstrap_Level_Ep2EndOutro
+;	jp Bootstrap_Level_Ep2EndIntro
+
+;jp GameOverWin
+
+
+;	jp Bootstrap_Level_Intro
+;	jp Bootstrap_Level_EndOutro
+	jp Bootstrap_Level_0	; Start the menu
+;jp Bootstrap_Level_0Again
+
+
+
+;For testing the game from an intro - cheat the game to start with certain players
+Cheat_BochanOnly:
+	ld a,1
+	ld (LivePlayers),a
+	ld a,3
+	ld (P2_P09),a
+	xor a
+	ld (P1_P09),a
+ret
+Cheat_ChibikoOnly:
+	ld a,1
+	ld (LivePlayers),a
+	ld a,3
+	ld (P1_P09),a
+	xor a
+	ld (P2_P09),a
+ret
+Cheat_TwoPlayer:
+	ld a,2
+	ld (LivePlayers),a
+	ld a,3
+	ld (P1_P09),a
+	ld (P2_P09),a
+ret
+
+;There are two version of Level0 (Menu) - one to run from the game load up
+; and one to reset things if the game has returned from gameover
+Bootstrap_Level_0Again:	
+	;call Akuyou_Firmware_Restore
+	;call Akuyou_ScreenBuffer_
+	;ld hl,RasterColors_ZeroColors
+	;call SetColors
+	ei
+	halt
+	halt
+	halt 
+	halt 
+	halt
+	halt
+	di
+
+	ld a,(CPCVer)	;cpcver
+	and 128
+	jr nz,Bootstrap_Level_0Again_128k
+
+
+	ld a,&C0
+	ld hl,DiskMap_LoadingScreen
+;	ld b,DiskMap_LoadingScreen_Size
+	ld c,DiskMap_LoadingScreen_Disk
+	ld de,&C000
+	ld ix,&C000+&4000-1;-8523
+	call Akuyou_LoadDiscSectorZ
+	jr Bootstrap_Level_0
+Bootstrap_Level_0Again_128k:	
+	ld a,&C4
+	ld hl,DiskMap_LoadingScreen
+;	ld b,DiskMap_LoadingScreen_Size
+	ld c,DiskMap_LoadingScreen_Disk
+	ld de,&C000
+	ld ix,&4000+&4000-1;-8523
+	call Akuyou_LoadDiscSectorZ
+	jr Bootstrap_Level_0
+Bootstrap_Level_0:	
+
+
+
+
+	call StartANewGame
+	call LevelReset0000
+
+
+	ld hl,DiskMap_MainMenu		;T08-SC1.D01
+	ld c,DiskMap_MainMenu_Disk
+
+	call Bootstrap_LoadEP2Music_Z
+
+	jp Bootstrap_LoadEP2Level_1Part;Z;_Zpartial
+
+
+
+
+ret
+;backup 4k of screen for temp use - we always use the screen for scratch area,
+;but if we have spare space somewhere else, lets's use it!
+
+
+
+ShowTextLines:
+	push hl
+	push bc
+		ld a,2
+		call Akuyou_SpriteBank_Font
+		;ld hl,&7000
+;		call Akuyou_ShowSprite_SetBankAddr
+	pop bc
+	pop hl
+ShowTextLinesAgain:
+	ld a,(bc)
+	ld h,a
+	dec h
+	inc bc
+	call Akuyou_DrawText_LocateSprite	
+	
+	ld a,255
+	ld i,a
+	push hl
+		call Akuyou_DrawText_PrintString	
+	pop hl
+	inc bc
+	inc l
+	ld a,(bc)
+	or a
+	jr nz,ShowTextLinesAgain
+ret
+
+ifdef Debug
+DebugBuild:
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+db 13,"Debug Build","!"+&80
+db 0
+endif
+InitPlayer:
+	ld a,3
+	ld (iy+9),a
+	ret
+
+NewGame_CheatStart:
+	pop hl	;junk
+	call StartANewGame
+	pop hl	;Get CheatSettings
+	ld a,h
+	push hl
+		ld hl,Cheat_ChibikoOnly
+		cp 0		
+		jr z,ApplyCheatPlayerCall
+
+		ld hl,Cheat_BochanOnly
+		cp 1
+		jr z,ApplyCheatPlayerCall
+
+		ld hl,Cheat_TwoPlayer
+		cp 2
+		jr z,ApplyCheatPlayerCall
+
+ApplyCheatPlayerCall:
+		ld (CheatPlayerCall_Plus2-2),hl
+	pop hl
+	ld a,l
+	or a
+	jr z,ApplyCheatNoCheatMode
+
+	xor a
+	call Akuyou_Player_CheatMode
+;	call Cheat_BochanOnly
+;	call Cheat_ChibikoOnly
+
+
+ApplyCheatNoCheatMode:
+	call null :CheatPlayerCall_Plus2
+
+	pop hl ;level
+	jp Bootstrap_Level
+ret
+
+NewGame_EP2_2P:
+	call StartANewGame
+	ld iy,Player_Array
+
+	ld a,2
+	ld (iy-7),a ;live players
+
+	call InitPlayer
+
+	ld de,Akuyou_PlayerSeparator
+	add iy,de
+	call InitPlayer
+	jr Bootstrap_Stage_11
+
+NewGame_EP2_1UP:
+	call StartANewGame
+	ld iy,Player_Array
+	
+	call InitPlayer
+	jr Bootstrap_Stage_11
+NewGame_EP2_2UP:
+	call StartANewGame
+	
+	ld iy,Player_Array
+	ld de,Akuyou_PlayerSeparator
+	add iy,de
+	call InitPlayer
+
+Bootstrap_Stage_11:	
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ld hl,DiskMap_Level1		;T10-SC1.D01
+	ld c,DiskMap_Level1_Disk 	
+
+	call Bootstrap_LoadEP2Music_Z
+
+	jp Bootstrap_LoadEP2Level_2PartZ;_Zpartial
+;	jp Bootstrap_LoadEP2Level_2Part_Z
+
+
+
+Bootstrap_Stage_12:
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+
+	;Music from first part
+	ld hl,DiskMap_Level1		;T10-SC1.D01
+	ld c,DiskMap_Level1_Disk 	
+	call Bootstrap_LoadEP2Music_Z
+
+	;music for boss battle
+	ld hl,DiskMap_MusicBoss
+	ld c,DiskMap_MusicBoss_Disk
+	call Bootstrap_LoadEP2AltMusic_Z
+
+
+	ld a,&C0
+	ld hl,DiskMap_Level2
+	ld c,DiskMap_Level2_Disk
+
+	jp Bootstrap_LoadEP2Level_4PartZ
+
+
+;ret
+
+
+Bootstrap_Stage_13:	
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ld hl,DiskMap_Level3		;T20-SC1.D01
+	ld c,DiskMap_Level3_Disk 	
+
+	call Bootstrap_LoadEP2Music_Z
+
+	jp Bootstrap_LoadEP2Level_2PartZ;_Zpartial
+
+
+Bootstrap_Stage_14:
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ld hl,DiskMap_Level3		;T20-SC1.D01
+	ld c,DiskMap_Level3_Disk 	
+	call Bootstrap_LoadEP2Music_Z
+
+	;music for boss battle
+	ld hl,DiskMap_MusicBoss
+	ld c,DiskMap_MusicBoss_Disk
+	call Bootstrap_LoadEP2AltMusic_Z
+
+	ld hl,DiskMap_Level4
+	ld c,DiskMap_Level4_Disk	;T24-SC1.D01
+	jp Bootstrap_LoadEP2Level_2PartZ;_Zpartial
+
+
+
+
+
+Bootstrap_Stage_15:
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ld hl,DiskMap_Level1		
+	ld c,2;DiskMap_Level1_Disk 	
+
+	call Bootstrap_LoadEP2Music_Z
+
+
+	ld hl,DiskMap_Level1 ;T10-SC1.D01
+	ld c,2 	
+	jp Bootstrap_LoadEP2Level_2PartZ
+
+Bootstrap_Stage_16:
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+
+	ld hl,DiskMap_Level1		
+	ld c,2	
+	call Bootstrap_LoadEP2Music_Z
+
+
+	;music for boss battle
+	ld hl,DiskMap_MusicBoss
+	ld c,DiskMap_MusicBoss_Disk
+	call Bootstrap_LoadEP2AltMusic_Z
+
+
+
+	ld hl,DiskMap_Level2
+	ld c,2 	;T14-SC1.D01
+	jp Bootstrap_LoadEP2Level_4PartZ;_Zpartial
+
+
+
+
+
+Bootstrap_Stage_17:	
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ld hl,DiskMap_Level3
+	ld c,2 	;T20-SC1.D02	
+
+	call Bootstrap_LoadEP2LoadScreen_Z
+
+	call Bootstrap_LoadEP2Music_Z
+
+
+	ld hl,DiskMap_Level3
+	ld c,2 	;T20-SC1.D02
+	jp Bootstrap_LoadEP2Level_2PartZ;_Zpartial
+
+
+
+Bootstrap_Stage_18:	
+	
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ld hl,DiskMap_Level3
+	ld c,2 	;T20-SC1.D02	
+	call Bootstrap_LoadEP2Music_Z
+
+
+
+
+;	ld a,&C4
+;	ld hl,DiskMap_Level4_C
+;	ld c,2  ;T17-SC3.D02
+;	ld de,&4000
+;	call Akuyou_LoadDiscSectorz
+
+
+	ld hl,DiskMap_Level4
+	ld c,2 	;T24-SC1.D02
+
+	ld a,&C4
+	ld l,&C3
+	ld de,&4000
+	ld ix,&8000
+	call LoadDiscSectorZ_WithPushes
+
+	ld a,&C1	       ;128k Part
+	ld l,&C2
+	ld de,LevelData128kpos
+	ld ix,&E800
+	call LoadDiscSectorZ_WithPushes
+
+	push bc
+	push hl
+	push ix
+
+		;music for boss battle
+		ld a,&C7
+		ld hl,DiskMap_MusicBoss
+		ld c,DiskMap_MusicBoss_Disk
+		ld de,&6200
+		ld ix,&6200+&450
+		call Akuyou_LoadDiscSectorZ
+	pop ix
+	pop hl
+	pop bc
+
+
+jp Bootstrap_LoadEP2Level_1PartZ
+
+
+
+
+
+Bootstrap_Level_Ep2EndOutro:
+
+	ld hl,DiskMap_Intro		;T56-SC1.D04
+	ld c,DiskMap_IntroEp2_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_EndOutro ;T50-SC1.D03
+	ld c,4
+
+	jp Bootstrap_LoadEP2Level_1PartZ	
+
+Bootstrap_Level_Ep2EndIntro:
+
+	ld hl,DiskMap_EndIntro ;"T56-SC1.D04"
+	ld c,3
+
+	call Bootstrap_LoadEP2Music_Z
+
+	jp Bootstrap_LoadEP2Level_1PartZ
+
+
+Bootstrap_Level_Ep2Intro:
+	ld hl,DiskMap_Intro		;T56-SC1.D04
+	ld c,DiskMap_IntroEp2_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Intro ;"T56-SC1.D04"
+	ld c,DiskMap_IntroEp2_Disk
+	jp Bootstrap_LoadEP2Level_1PartZ
+
+Bootstrap_Stage_19:
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	call FireMode_4D
+
+
+	ld hl,DiskMap_Stage_19  ;T30-SC1.D02
+	ld c,2
+
+	call Bootstrap_LoadEP2LoadScreen_Z
+
+	call Bootstrap_LoadEP2Music_Z
+
+;	ld a,&C4
+;	ld l,&C4
+;	ld de,&6000
+;	ld ix,Akuyou_MusicPosAlt;&8000
+;	call LoadDiscSectorZ_WithPushes
+
+
+
+;	ld c,3	;Disk3
+
+
+;	ld a,&C4
+;	ld l,&C3
+;	ld de,&4000
+;	ld ix,&6000
+	;call LoadDiscSectorZ_WithPushes
+	;push hl
+;	push bc
+;		call &4000
+;	pop bc
+;	pop hl
+
+	jp Bootstrap_LoadEP2Level_4PartZ
+Bootstrap_Stage_20:
+
+
+	call Akuyou_RasterColors_DefaultSafe
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	call FireMode_4D
+
+
+	ld hl,DiskMap_Stage_20B		;T32-SC1.D02
+	ld c,DiskMap_Stage_20_Disk
+
+	call Bootstrap_LoadEP2Music_Z
+
+
+;	ld a,&C0
+	ld hl,DiskMap_Stage_20  ;T31-SC1.D02
+	ld c,DiskMap_Stage_20_Disk
+
+
+
+	ld a,&C4
+	ld de,&4000
+	ld ix,&4000+&4000
+	ld l,&C3
+	call LoadDiscSectorZ_WithPushes
+
+
+	;256k Banks
+	;CC CD CE CF
+	;D4 D5 D6 D7
+	
+
+	ld a,(CPCVer)	;cpcver
+	and 64		;256k?
+	jr z,Stage20No256k
+
+	ld l,23				; Show the 'Debug mode' message
+	ld bc,load256k
+	call ShowTextLines
+
+
+
+	ld hl,DiskMap_Stage_20  ;T31-SC1.D02
+	ld c,DiskMap_Stage_20_Disk
+
+
+	ld a,&CC
+	ld de,&4000
+	ld l,&C4
+	ld ix,&4000+&4000
+	call LoadDiscSectorZ_WithPushes
+
+	ld a,&CD
+	ld de,&4000
+	ld l,&C5
+	call LoadDiscSectorZ_WithPushes
+
+	ld a,&CE
+	ld de,&4000
+	ld l,&C6
+	call LoadDiscSectorZ_WithPushes
+
+
+	ld a,&CF
+	ld de,&4000
+	ld l,&C7
+	call LoadDiscSectorZ_WithPushes
+
+
+	ld a,&D4
+	ld de,&4000
+	ld l,&C8
+	call LoadDiscSectorZ_WithPushes
+
+	ld a,&D5
+	ld de,&4000
+	ld l,&C9
+	call LoadDiscSectorZ_WithPushes
+
+
+	ld hl,DiskMap_Stage_20B  ;T32-SC1.D02
+	ld a,&D6
+	ld de,&4000
+	ld l,&C1
+	call LoadDiscSectorZ_WithPushes
+
+	ld a,&D7
+	ld de,&4000
+	ld l,&C2
+	call LoadDiscSectorZ_WithPushes
+
+
+	ld hl,DiskMap_Stage_20  ;T31-SC1.D02
+Stage20No256k:
+	jp Bootstrap_LoadEP2Level_2PartZ
+
+
+
+
+
+
+
+
+
+
+load256k:
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+db 2, "Please Wait, Loading 256K Sprites..","."+&80
+db 0
+
+
+
+
+
+LoadDiscSector_WithPushes:
+	push bc
+	push hl
+		call Akuyou_LoadDiscSector
+	pop hl
+	pop bc
+ret
+LoadDiscSectorZ_WithPushes:
+	push bc
+	push hl
+	push ix
+		call Akuyou_LoadDiscSectorZ
+	pop ix
+	pop hl
+	pop bc
+ret
+
+
+
+;Compressed Loader
+
+Bootstrap_LoadEP2LoadScreen_Z:
+	ld a,&C0
+	ld de,&4000
+	ld ix,&4000+&4000
+	ld l,&C8
+	push hl
+	push bc
+		call LoadDiscSectorZ_WithPushes
+		call Akuyou_RasterColors_DefaultSafe
+		call &4000
+	pop bc
+	pop hl
+ret
+
+
+Bootstrap_LoadEP2AltMusic_Z:
+	ld a,&C4
+	ld de,Akuyou_MusicPosAlt
+	ld ix,Akuyou_MusicPosAlt+&450
+	jp Akuyou_LoadDiscSectorZ
+
+Bootstrap_LoadEP2Music_Z:
+	ld a,&C0
+	ld de,Akuyou_MusicPos
+	ld ix,Akuyou_MusicPos+&400
+	ld l,&C9
+	jp LoadDiscSectorZ_WithPushes
+
+
+Bootstrap_LoadEP2Level_2Part_Z:
+
+	ld a,&C1	       ;128k Part
+	ld l,&C2
+	ld de,LevelData128kpos
+	ld ix,&E800
+	call LoadDiscSectorZ_WithPushes
+
+Bootstrap_LoadEP2Level_1Part_Z:
+
+	ld a,&C0		; Base Part
+	ld l,&C1
+	ld de,Akuyou_LevelStart+&1000
+	ld ix,&8000;7FFF
+	call Akuyou_LoadDiscSectorZ
+
+	jp GenericStartLevel
+
+
+
+
+; Uncompressed - For Testing
+
+Bootstrap_LoadEP2Music:
+	ld a,&C0
+	ld de,Akuyou_MusicPos
+	ld ix,Akuyou_MusicPos+&400
+	ld l,&C9
+	jp LoadDiscSector_WithPushes
+
+
+Bootstrap_LoadEP2Level_3PartAlt:
+
+	ld a,&C4
+	ld l,&C3
+	ld de,&4000
+	ld ix,&8000
+	call LoadDiscSector_WithPushes
+	jp Bootstrap_LoadEP2Level_2Part
+Bootstrap_LoadEP2Level_4Part:
+
+	ld a,&C4
+	ld l,&C4
+	ld de,&6000
+	ld ix,&8000
+	call LoadDiscSector_WithPushes
+
+Bootstrap_LoadEP2Level_3Part:
+
+	ld a,&C4
+	ld l,&C3
+	ld de,&4000
+	ld ix,&6000
+	call LoadDiscSector_WithPushes
+
+
+Bootstrap_LoadEP2Level_2Part:
+
+	ld a,&C1	       ;128k Part
+	ld l,&C2
+	ld de,LevelData128kpos
+	ld ix,&E800
+	call LoadDiscSector_WithPushes
+
+Bootstrap_LoadEP2Level_1Part:
+
+	ld a,&C0		; Base Part
+	ld l,&C1
+	ld de,Akuyou_LevelStart
+	ld ix,&8000;7FFF
+	call Akuyou_LoadDiscSector
+
+	jp GenericStartLevel
+
+
+
+Bootstrap_LoadEP2Level_4PartZ:
+
+	ld a,&C4
+	ld l,&C4
+	ld de,&6000
+	ld ix,Akuyou_MusicPosAlt;&8000
+	call LoadDiscSectorZ_WithPushes
+
+Bootstrap_LoadEP2Level_3PartZ:
+
+	ld a,&C4
+	ld l,&C3
+	ld de,&4000
+	ld ix,&6000
+	call LoadDiscSectorZ_WithPushes
+
+
+Bootstrap_LoadEP2Level_2PartZ:
+
+	ld a,&C1	       ;128k Part
+	ld l,&C2
+	ld de,LevelData128kpos
+	ld ix,&E800
+	call LoadDiscSectorZ_WithPushes
+
+Bootstrap_LoadEP2Level_1PartZ:
+
+	ld a,&C0		; Base Part
+	ld l,&C1
+	ld de,Akuyou_LevelStart
+	ld ix,&8000;7FFF
+	call Akuyou_LoadDiscSectorZ
+
+	jp GenericStartLevel
+
+
+
+
+
+
+; Part Compressed - For Testing
+
+Bootstrap_LoadEP2Level_4Part_Zpartial:
+
+	ld a,&C4
+	ld l,&C4
+	ld de,&6000
+	ld ix,&8000
+	call LoadDiscSectorZ_WithPushes
+
+Bootstrap_LoadEP2Level_3Part_Zpartial:
+
+	ld a,&C4
+	ld l,&C3
+	ld de,&4000
+	ld ix,&6000
+	call LoadDiscSectorZ_WithPushes
+
+
+Bootstrap_LoadEP2Level_2Part_Zpartial:
+
+	ld a,&C1	       ;128k Part
+	ld l,&C2
+	ld de,LevelData128kpos
+	ld ix,&E800
+	call LoadDiscSectorZ_WithPushes
+
+Bootstrap_LoadEP2Level_1Part_Zpartial:
+
+	ld a,&C0		; Base Part
+	ld l,&C1
+	ld de,Akuyou_LevelStart
+	ld ix,&8000;7FFF
+	call Akuyou_LoadDiscSector
+
+	jp GenericStartLevel
+
+
+
+
+
+
+
+;Level_1Msg
+
+;db 2 ,"After a hard nights work massacrin","g"+&80
+;db 2 ,"villagers and harvesting their bloo","d"+&80
+;db 1 ,"Chibiko is having a well earned day'","s"+&80
+;db 1 ,"sleep... Suddenly she is awoken by ","a"+&80
+;db 4 ,"commotion. A swarm of noizy, stupi","d"+&80
+;db 2 ,"ill concieved and badly drawn monster","s"+&80
+;db 2 ,"are being drawn to her castle, and ar","e"+&80
+;db 4 ,"seriously disturbing the peace","!"+&80
+;;db 15," "," "+&80
+;db 4 ,"No self respecting vampire ca","n"+&80
+;db 3 ,"overlook this insult! its time t","o"+&80
+;db 3 ,"'Rise from your grave' and unleas","h"+&80
+;db 6 ,"hell on whoever sent them","!"+&80
+;db &0
+Bootstrap_Level_1:	
+	
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+;	ld a,0
+;	ld hl,DiskMap_LevelLoadScreens12
+;	ld b,DiskMap_LevelLoadScreens12_Size
+;	ld c,DiskMap_LevelLoadScreens12_Disk
+;	ld de,&2000
+;	call Akuyou_LoadDiscSector
+;	call ClearC000
+;	call &2000
+;	ld a,1
+;	call SpriteBank_Font
+
+;	ld l,&0C				; Show the Continue message
+;	ld bc,Level_1Msg;
+;	call ShowTextLines
+
+
+
+	call StartANewGame
+	call LevelReset0000
+	ld bc,&7f8D	; Reset the firmware to OFF
+	out (c),c
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+
+	call Bootstrap_LoadEP2Music_Z
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+
+	jp Bootstrap_LoadEP2Level_2Part	
+
+Bootstrap_Level_2:	
+
+	ld a,CSprite_Loading *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	call LevelReset0000
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+
+	call Bootstrap_LoadEP2Music_Z
+
+
+	ld hl,DiskMap_Level2
+	ld c,DiskMap_Level2_Disk
+
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+ret
+
+;Level_3Msg
+
+;db 3 ,"The monsters climbing the mountai","n"+&80
+;db 3 ,"Seem to be coming from the fores","t"+&80
+;db 3 ,"Its time to push forward, and sto","p"+&80
+;db 13,"the invasion","!"+&80
+;db 3 ,"The animals of the forest seem t","o"+&80
+;db 3 ,"have become mutants, zombies, an","d"+&80
+;db 8 ,"generally super-annoyin","g"+&80
+;db 15," "," "+&80
+;db 3 ,"But no matter what zombified evi","l"+&80
+;db 3 ,"lurks in the heart of the fores","t"+&80
+;db 3 ,"it will be no match for Chibiko'","s"+&80
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+;db 13,"Black Magic!!","!"+&80
+;db &0
+Bootstrap_Level_3:	
+
+
+;	ld a,1*3		; moving up a level, so show "Level complete" screen
+;	call Akuyou_ShowCompiledSprite
+
+;	ld a,&C0
+;	ld hl,DiskMap_LevelLoadScreens12
+;	ld b,DiskMap_LevelLoadScreens12_Size
+;	ld c,DiskMap_LevelLoadScreens12_Disk
+;	ld de,&2000
+;	call Akuyou_LoadDiscSector
+;	call ClearC000
+;	call &2003
+
+
+
+;	ld a,2
+;	call SpriteBank_Font
+
+;	ld l,&0C				
+;	ld bc,Level_3Msg
+;	call ShowTextLines
+
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level3
+	ld c,DiskMap_Level3_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+
+;	call LevelReset0000
+
+
+;	ld a,&C0
+;	ld hl,DiskMap_Level3
+;	ld b,DiskMap_Level3_Size
+;	ld c,DiskMap_Level3_Disk
+;	ld de,&2800
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level3_128
+;	ld b,DiskMap_Level3_128_Size
+;	ld c,DiskMap_Level3_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+
+;	Call PressFireMessage
+
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+
+ret
+
+
+
+Bootstrap_Level_4:	
+
+;	ld a,CSprite_Loading *3		;Loading
+;	call Akuyou_ShowCompiledSprite
+
+
+;	call LevelReset0000
+
+;	ld a,&C0
+;	ld hl,DiskMap_Level4
+;	ld b,DiskMap_Level4_Size
+;	ld c,DiskMap_Level4_Disk
+;	ld de,&1E00
+	;call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level4_128
+;	ld b,DiskMap_Level4_128_Size
+;	ld c,DiskMap_Level4_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Bootstrap_MusicInitBoss
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+
+
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level4
+	ld c,DiskMap_Level4_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+ret
+
+;Level_5Msg
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+;db 15,""," "+&80
+;db  2,"After defeating the evil zombifie","d"+&80
+;db  3,"merchandise cash-cow,and narrowl","y"+&80
+;db  4,"avoiding buying the plush dol","l"+&80
+;db  3,"Chibiko headed down to the river",","+&80
+;db  3,"only to find it also full of weir","d"+&80
+;db  4,"stuff too! Heading to the sourc","e"+&80
+;db  5,"will reveal whoever sent the","m"+&80
+;db  3,"and stop this annoyance once an","d"+&80
+;db 15,"for all","!"+&80
+;db &0
+
+
+
+Bootstrap_Level_5:	
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level5
+	ld c,DiskMap_Level5_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+;	ld a,1*3		; moving up a level, so show "Level complete" screen
+;	call Akuyou_ShowCompiledSprite
+
+
+;	ld a,&C0
+;	ld hl,DiskMap_LevelLoadScreens34
+;	ld b,DiskMap_LevelLoadScreens34_Size
+;	ld c,DiskMap_LevelLoadScreens34_Disk
+;	ld de,&2000
+;	call Akuyou_LoadDiscSector
+;	call ClearC000
+;	call &2000
+
+
+;	ld l,&0C				; Show the Continue message
+;	ld bc,Level_5Msg
+;	call ShowTextLines
+
+;	call LevelReset0000
+
+
+;	ld a,&C0
+;	ld hl,DiskMap_Level5
+;	ld b,DiskMap_Level5_Size
+;	ld c,DiskMap_Level5_Disk
+;	ld de,&2A00
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level5_128
+;	ld b,DiskMap_Level5_128_Size
+;	ld c,DiskMap_Level5_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+
+
+;	Call PressFireMessage;
+
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+ret
+
+
+
+Bootstrap_Level_6:
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level6
+	ld c,DiskMap_Level6_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+;	ld a,CSprite_Loading *3		;Loading
+;	call Akuyou_ShowCompiledSprite
+
+
+	
+	;call LevelReset0000
+;
+;	ld a,&C0
+;	ld hl,DiskMap_Level6
+;	ld b,DiskMap_Level6_Size
+;	ld c,DiskMap_Level6_Disk
+;	ld de,&2500
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level6_128
+;	ld b,DiskMap_Level6_128_Size
+;	ld c,DiskMap_Level6_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+
+;	call Bootstrap_MusicInitBoss
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+ret
+PressFireMessage:
+
+	ld hl,&0918				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,PressFireMsg
+	ld a,255
+	ld i,a
+	call Akuyou_DrawText_PrintString	
+
+	jp WaitForFire
+PressFireMsg:
+db "Press Fire to Continue","!"+&80
+
+;Level_7Msg
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+;db 3 ,"The monsters are coming from thi","s"+&80
+;db 3 ,"cave! There's only one entranc","e"+&80
+;db 2 ,"So whoever is sending them must b","e"+&80
+;db 15,"in there","!"+&80
+;db 15," "," "+&80
+;db 3 ,"Its difficult to see, as the cave","s"+&80
+;db 2 ,"is are only lit by phosphor rock","s"+&80
+;db 09,"and Glowing Creature","s"+&80
+;db 15," "," "+&80
+;db 4 ,"but, Victory is in your grasp","!"+&80
+;db 1 ,"Go in there, and 'Sort that shit out!","'"+&80
+;db &0
+
+
+
+Bootstrap_Level_7:	
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level7
+	ld c,DiskMap_Level7_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+	
+;	ld a,1*3		; moving up a level, so show "Level complete" screen
+;	call Akuyou_ShowCompiledSprite
+
+;	ld a,&C0
+;	ld hl,DiskMap_LevelLoadScreens34
+;	ld b,DiskMap_LevelLoadScreens34_Size
+;	ld c,DiskMap_LevelLoadScreens34_Disk
+;	ld de,&2000
+;	call Akuyou_LoadDiscSector
+;	call ClearC000
+;	call &2003
+
+
+
+;	ld l,&0C				; Show the Continue message
+;	ld bc,Level_7Msg
+;	call ShowTextLines
+
+
+;	call LevelReset0000
+
+;	ld a,&C0
+;	ld hl,DiskMap_Level7
+;	ld b,DiskMap_Level7_Size
+;	ld c,DiskMap_Level7_Disk
+;	ld de,&1D00
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level7_128
+;	ld b,DiskMap_Level7_128_Size
+;	ld c,DiskMap_Level7_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+
+
+;	Call PressFireMessage
+
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+ret
+
+
+
+Bootstrap_Level_8:	
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level8
+	ld c,DiskMap_Level8_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+;	ld a,CSprite_Loading *3		;Loading
+;	call Akuyou_ShowCompiledSprite
+
+
+;	call LevelReset0000
+
+;	ld a,&C0
+;	ld hl,DiskMap_Level8
+;	ld b,DiskMap_Level8_Size
+;	ld c,DiskMap_Level8_Disk
+;	ld de,&2300
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level8_128
+;	ld b,DiskMap_Level8_128_Size
+;	ld c,DiskMap_Level8_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+
+;ret
+
+
+Bootstrap_Level_9:	
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Level9
+	ld c,DiskMap_Level9_Disk
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+;	ld a,CSprite_Loading *3		;Loading
+;	call Akuyou_ShowCompiledSprite
+
+
+;	call LevelReset0000
+
+;	ld a,&C0
+;	ld hl,DiskMap_Level9
+;	ld b,DiskMap_Level9_Size
+;	ld c,DiskMap_Level9_Disk
+;	ld de,&3000
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Level9_128
+;	ld b,DiskMap_Level9_128_Size
+;	ld c,DiskMap_Level9_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+
+;	jp LevelData_StartLevel ; the Bootstrap will be overwritten by the screenbuffer
+;	call Bootstrap_MusicInitBoss
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+;ret
+
+Bootstrap_Level_EndIntro:	
+
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_EndIntro
+	ld c,DiskMap_EndIntro_Disk		;T38-SC1.D02
+	jp Bootstrap_LoadEP2Level_2Part	
+
+;	call StartANewGame
+;	call LevelReset0000
+
+
+;	ld a,&C0
+;	ld hl,DiskMap_EndIntro		;T38-SC1.D02
+;	ld c,2
+;	ld de,Akuyou_LevelStart+&000	
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_EndIntro_128	;T41-SC1.D02
+;	ld c,2
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+
+
+
+
+;	ld a,CSprite_Loading *3		;Loading
+;	call Akuyou_ShowCompiledSprite
+
+
+;	call LevelReset0000
+
+
+
+
+ret
+
+Bootstrap_Level_EndOutro:	
+
+
+
+;DiskMap_EndOutro       		equ &0AC1+&2800	;10 T50-SC1.D03
+;DiskMap_EndOutro_Size		equ 16
+;DiskMap_EndOutro_128   		equ &0CC1+&2800	;12 T52-SC1.D03
+;DiskMap_EndOutro_128_Size	equ 8	
+;DiskMap_EndOutro_Screens  	equ &0DC1+&2800	;13 T53-SC1.D03
+;DiskMap_EndOutro_Screens_Size	equ 24	
+;DiskMap_EndOutro_Disk 		equ DiskMap3
+
+
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_EndOutro
+	ld c,2				;T38-SC1.D02
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+
+
+;	call StartANewGame
+;	call LevelReset0000
+
+
+;	ld a,&C0
+;	ld hl,DiskMap_EndOutro
+;	ld c,2
+;	ld de,Akuyou_LevelStart+&000	;T24-SC1.D02
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_EndOutro_128	;T27-SC1.D02
+;	ld c,2
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+;	ld a,1*3		; moving up a level, so show "Level complete" screen
+;	call Akuyou_ShowCompiledSprite
+
+
+;	call LevelReset0000
+
+
+;	ld a,&C0
+;	ld hl,DiskMap_EndOutro
+;	ld b,DiskMap_EndOutro_Size
+;	ld c,DiskMap_EndOutro_Disk
+;	ld de,&2F00
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_EndOutro_128
+;	ld b,DiskMap_EndOutro_128_Size
+;	ld c,DiskMap_EndOutro_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+;	jp LevelData_StartLevel ; the Bootstrap will be overwritten by the screenbuffer
+;	call Bootstrap_MusicInitLevel
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+
+;ret
+Bootstrap_Level_Intro:
+
+
+
+	ld hl,DiskMap_Level1
+	ld c,DiskMap_Level1_Disk
+	call Bootstrap_LoadEP2Music_Z
+
+	ld hl,DiskMap_Intro
+	ld c,2				;T38-SC1.D02
+	jp Bootstrap_LoadEP2Level_2Part	
+
+
+
+
+
+
+
+;DiskMap_Intro       		equ &10C1+&2800	; T56-SC1.D03
+;DiskMap_Intro_Size		equ 13
+;;DiskMap_Intro_128   		equ &12C1+&2800	; T58-SC1.D03
+;DiskMap_Intro_128_Size		equ 8	
+;DiskMap_Intro_Screens  		equ &13C1+&2800	; T59-SC1.D03
+;DiskMap_Intro_Screens_Size	equ 32	
+;DiskMap_Intro_Screens2  	equ &17C1+&2800	; T63-SC1.D03
+;DiskMap_Intro_Screens2_Size	equ 32	
+;DiskMap_Intro_Disk 		equ DiskMap3
+
+
+
+;	ld a,CSprite_Loading *3		;Loading
+;	call Akuyou_ShowCompiledSprite
+
+;	call LevelReset0000
+
+;	ld a,&C0
+;	ld hl,DiskMap_Intro
+;	ld b,DiskMap_Intro_Size
+;	ld c,DiskMap_Intro_Disk
+;	ld de,&2500
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_Intro_128
+;	ld b,DiskMap_Intro_128_Size
+;	ld c,DiskMap_Intro_Disk
+;	ld de,LevelData128kpos
+;	call Akuyou_LoadDiscSector
+
+;	call Bootstrap_MusicInitIntro
+;	call Akuyou_Music_Restart
+;	jp LevelData_StartLevel
+
+ifdef SupportPlus
+
+
+
+
+
+
+Bootstrap_ReloadPlusSprites:
+	ld a,&C0
+	ld hl,DiskMap_PlusSprites
+	ld b,DiskMap_PlusSprites_Size
+	ld c,DiskMap_PlusSprites_Disk
+	ld de,Akuyou_PlusSpritesPos
+	ld ix,Akuyou_PlusSpritesPos+&800-1
+;	ld ix,&E800
+	call Akuyou_LoadDiscSectorz
+
+
+	ld a,&C0
+	call BankSwitch_C0_SetCurrent
+
+		di
+		ld b,4
+		ld a,2
+		ld hl,Akuyou_PlusSpritesPos+&0FF
+		call Plus_CopySpriteCompressed
+
+		ld b,5
+		ld a,2
+		ld hl,Akuyou_PlusSpritesPos+&07F
+		call Plus_CopySpriteCompressed
+
+		ld b,6
+		ld a,2
+		ld hl,Akuyou_PlusSpritesPos+&17F
+		push hl
+		call Plus_CopySpriteCompressed
+
+		ld b,7
+		ld a,2
+		pop hl
+		push hl
+		call Plus_CopySpriteCompressed
+
+		ld b,8
+		ld a,2
+		pop hl
+		call Plus_CopySpriteCompressed
+
+		ld b,9
+		ld a,2
+		ld hl,Akuyou_PlusSpritesPos+&1FF
+		push hl
+		call Plus_CopySpriteCompressed
+
+		ld b,10
+		ld a,2
+		pop hl
+		push hl
+		call Plus_CopySpriteCompressed
+
+		ld b,11
+		ld a,2
+		pop hl
+		call Plus_CopySpriteCompressed
+
+		ei
+
+
+
+	ld a,&C0
+	ld hl,DiskMap_PlusSpritesChibiko
+	ld c,DiskMap_PlusSpritesChibiko_Disk
+	ld de,Akuyou_PlayerSpritePos
+;	ld ix,&3800+&800;-1
+	call Akuyou_LoadDiscSector
+
+
+;	ld a,&C1
+;	ld hl,DiskMap_PlusSpritesBo
+;	ld c,DiskMap_PlusSpritesBo_Disk
+;	ld de,&F800
+;	call Akuyou_LoadDiscSector
+
+;	ld a,&C1
+;	ld hl,DiskMap_PlusSpritesBoUD
+;	ld c,0
+;	ld de,&F000
+;	call Akuyou_LoadDiscSector
+
+
+	ld a,&C1
+	ld hl,DiskMap_PlusSpritesBo;DiskMap_PlusSpritesChibikoUD
+	ld c,DiskMap_PlusSpritesChibiko_Disk;0
+	ld de,&E800
+	ld ix,&E800;+&1800
+	call Akuyou_LoadDiscSectorz
+
+
+
+ret
+endif
+
+Bootstrap_Test:
+
+
+	;Load the music
+	call Bootstrap_MusicInit
+	jp LevelData_StartLevel ; 
+
+; File Locations in virtual Track-Sector
+; The game was originally intended to use a direct disk reader - however as I managed
+; to get Firware restore working, and the popularity of C4CPC and M4 disk emulators
+; it seemed a bad choice to limit compatibility like that.
+; note the SIZE variables are redundant, the reader never uses them!
+
+
+DiskMap_BootStrap    		equ &05C1
+DiskMap_BootStrap_Size 		equ 4
+DiskMap_BootStrap_Disk 		equ 0
+
+DiskMap_MusicLevel 	  		equ &05C8 ;T05-SC8.D00
+DiskMap_MusicLevel_Size 		equ 2
+DiskMap_MusicLevel_Disk 		equ 0
+
+DiskMap_PlayerSprite 		equ &06C1 ;T06-SC1.D00
+DiskMap_PlayerSprite_Size 	equ 4
+DiskMap_PlayerSprite_Disk 	equ 0
+
+
+DiskMap_PlayerSpriteBo 		equ &06C2 ;T06-SC2.D00
+DiskMap_PlayerSpriteBo_Disk 	equ 0
+
+
+
+DiskMap_PlusSprites    		equ &21C1	;T33-SC1.D01
+DiskMap_PlusSprites_Size	equ 10
+DiskMap_PlusSprites_Disk 	equ 0
+
+
+DiskMap_PlusSpritesChibiko 	equ &21C2	;T33-SC2.D00
+DiskMap_PlusSpritesChibiko_Disk equ 0
+
+DiskMap_PlusSpritesBo  		equ &21C3	;T33-SC3.D01
+DiskMap_PlusSpritesBo_Disk 	equ 0
+
+;DiskMap_PlayerSpriteUD 		equ &06C3 ;T06-SC3.D00
+
+;DiskMap_PlayerSpriteBoUD 	equ &06C4 ;T06-SC4.D00
+
+
+DiskMap_Sfx	   		equ &06C8 ;T06-SC8.D00
+DiskMap_Sfx_Size 		equ 2
+DiskMap_Sfx_Disk 		equ 0
+
+DiskMap_Font  	     		equ &07C1  ;T07-SC1.D00
+;DiskMap_Font_Size 		equ 8
+DiskMap_Font_Disk 		equ 0
+
+DiskMap_MainMenu     		equ &08C1 ; T08-SC1.D01
+DiskMap_MainMenu_Size 		equ 16
+DiskMap_MainMenu_Disk 		equ DiskMap1
+
+DiskMap_LevelLoadScreens12	equ &03C1	;T03-SC1.D01
+DiskMap_LevelLoadScreens12_Size	equ 12
+DiskMap_LevelLoadScreens12_Disk equ DiskMap1
+
+
+
+DiskMap_Level1       		equ &0AC1	;10  T10-SC1.D01
+DiskMap_Level1_128   		equ &0CC1	;12  T12-SC1.D01
+DiskMap_Level1_Disk 		equ DiskMap1
+
+
+DiskMap_Level2       		equ &0EC1	;14 T14-SC1.D01
+DiskMap_Level2_128   		equ &11C1	;17 T17-SC1.D01
+DiskMap_Level2_C       		equ &0EC3	;14 T14-SC3.D01
+DiskMap_Level2_D       		equ &0EC4	;14 T14-SC4.D01
+DiskMap_Level2_Disk 		equ DiskMap1
+
+
+DiskMap_Level3       		equ &14C1	;20	T20-SC1.D01
+DiskMap_Level3_Size		equ 16
+DiskMap_Level3_128   		equ &16C1	;22 T22-SC1.D01
+DiskMap_Level3_128_Size		equ 16
+DiskMap_Level3_Disk 		equ DiskMap1
+
+DiskMap_Level4       		equ &18C1	;24 T24-SC1.D01
+DiskMap_Level4_Size		equ 20
+DiskMap_Level4_Disk 		equ DiskMap1
+DiskMap_Level4_128   		equ &1BC1	;27 T27-SC1.D01
+DiskMap_Level4_128_Size		equ 20
+
+;DiskMap_Level4_C		equ &18C3	;27 T24-SC3.D01
+
+
+DiskMap_Screens	       		equ &1DC1	;T29-SC1.D01
+DiskMap_Screens_Size		equ 32
+DiskMap_Screens_Disk 		equ 0
+
+
+
+
+;DiskMap_PlusSpritesChibikoUD 	equ &21C4	;T33-SC4.D00
+;DiskMap_PlusSpritesBoUD		equ &21C5	;T33-SC5.D00
+
+
+
+
+
+DiskMap_GameOver    		equ &22C2	;T34-SC2.D01
+DiskMap_GameOver_Size		equ 16
+DiskMap_GameOver_Disk 		equ DiskMap1
+
+
+;Note, we are loading this before the CORE, so we load by filename
+DiskMap_LoadingScreen     		equ &26C1 ; T38-SC1.D01 
+DiskMap_LoadingScreen_Size 		equ 32
+DiskMap_LoadingScreen_Disk 		equ DiskMap1
+
+
+DiskMap_LevelLoadScreens34	equ &03C1	;T03-SC1.D01
+DiskMap_LevelLoadScreens34_Size	equ 12
+DiskMap_LevelLoadScreens34_Disk equ DiskMap2
+
+
+DiskMap_Level5       		equ &0AC1	;10 
+DiskMap_Level5_Size		equ 16
+DiskMap_Level5_128   		equ &0CC1	;12 T12-SC1.D02
+DiskMap_Level5_128_Size		equ 16	; &2000
+DiskMap_Level5_Disk 		equ DiskMap2
+
+
+DiskMap_Level6       		equ &0EC1	;14
+DiskMap_Level6_Size		equ 20
+DiskMap_Level6_128   		equ &11C1	;17  T17-SC1.D02
+DiskMap_Level6_128_Size		equ 20	;&2500 - 3 tracks
+DiskMap_Level6_Disk 		equ DiskMap2
+
+
+DiskMap_Level7       		equ &14C1	;20	
+DiskMap_Level7_Size		equ 20
+DiskMap_Level7_128   		equ &17C1	;23 T23-SC1.D02
+DiskMap_Level7_128_Size		equ 16
+DiskMap_Level7_Disk 		equ DiskMap2
+
+DiskMap_Level8       		equ &19C1	;25	
+DiskMap_Level8_Size		equ 16
+DiskMap_Level8_Disk 		equ DiskMap2
+DiskMap_Level8_128   		equ &1BC1	;27  T27-SC1.D02
+DiskMap_Level8_128_Size		equ 16
+
+DiskMap_Level9       		equ &1DC1	;29 T29-SC1.D02
+DiskMap_Level9_Size		equ 16
+DiskMap_Level9_Disk 		equ DiskMap2
+DiskMap_Level9_128   		equ &1FC1	;31  T31-SC1.D02
+DiskMap_Level9_128_Size		equ 16
+
+
+
+DiskMap_Stage_19		equ &1EC1	;29 T30-SC1.D02
+DiskMap_Stage_19_Disk 		equ DiskMap3
+
+
+DiskMap_Stage_20		equ &1FC1	;29 T31-SC1.D02
+DiskMap_Stage_20_Disk 		equ DiskMap3
+DiskMap_Stage_20B		equ &20C1	;29 T32-SC1.D02
+
+DiskMap_EndIntro 	    		equ &26C1 ; T38-SC1.D02
+DiskMap_EndIntro_Size 			equ 16
+DiskMap_EndIntro_Disk 			equ DiskMap2
+DiskMap_EndIntro_128   			equ &29C1 ;T41-SC1.D02
+DiskMap_EndIntro_128_Size		equ 8
+
+; Disk 3 - Anims!
+
+
+DiskMap_EndOutro       		equ &0AC1+&2800	;10 T50-SC1.D03
+DiskMap_EndOutro_Size		equ 16
+DiskMap_EndOutro_128   		equ &0CC1+&2800	;12 T52-SC1.D03
+DiskMap_EndOutro_128_Size	equ 8	
+DiskMap_EndOutro_Screens  	equ &0DC1+&2800	;13 T53-SC1.D03
+DiskMap_EndOutro_Screens_Size	equ 24	
+DiskMap_EndOutro_Disk 		equ DiskMap3
+
+
+
+
+
+DiskMap_Intro       		equ &10C1+&2800	; T56-SC1.D03
+DiskMap_Intro_Size		equ 13
+DiskMap_Intro_128   		equ &12C1+&2800	; T58-SC1.D03
+DiskMap_Intro_128_Size		equ 8	
+DiskMap_Intro_Screens  		equ &13C1+&2800	; T59-SC1.D03
+DiskMap_Intro_Screens_Size	equ 32	
+DiskMap_Intro_Screens2  	equ &17C1+&2800	; T63-SC1.D03
+DiskMap_Intro_Screens2_Size	equ 32	
+DiskMap_Intro_Disk 		equ DiskMap3
+
+DiskMap_IntroEp2_Disk 		equ DiskMap4
+
+
+DiskMap_MusicIntro 	  		equ &1BC1+&2800 ;T67-SC1.D03
+DiskMap_MusicIntro_Size 			equ 2
+DiskMap_MusicIntro_Disk 			equ DiskMap3
+
+
+
+; Common disk entries
+	
+DiskMap_MusicBoss 	  		equ &24C1 ;36 ;T36-SC1.D00
+DiskMap_MusicBoss_Size 			equ 2
+DiskMap_MusicBoss_Disk 			equ 0
+
+DiskMap_MusicMenu 	  		equ &24C3 ;36 ;T36-SC3.D00
+DiskMap_MusicMenu_Size 			equ 2
+DiskMap_MusicMenu_Disk 			equ 0
+
+DiskMap_Core  	     		equ &25C1  	;37
+DiskMap_Core_Size 		equ 19
+DiskMap_Core_Disk 		equ 0
+
+DiskMap_Core_128  	   	equ &25C8  	;T37-SC8.D00
+DiskMap_Core_128_Size 		equ 2
+DiskMap_Core_128_Disk 		equ 0
+
+
+			;&29 is last track
+
+;Size in 512k Sectors
+
+
+
+
+
+
+SetColors:
+
+	ld a,1
+	ld b,0
+	ld c,b
+	push hl
+	call &bc38	; set border 0 to black
+	pop hl
+	ld b,4
+	ld c,0
+RasterColors_InitBasic:
+	push hl
+	push bc
+		ld a,c
+		ld c,(hl)
+		ld b,c
+		call &bc32	; set ink 0 to black
+	pop bc
+	pop hl
+	inc c
+	inc hl
+	djnz RasterColors_InitBasic
+	ret
+
+
+;Savesettings save the Highscore, Controls etc
+
+Bootstrap_SaveSettings:
+	call SaveSettings
+	
+;	ld hl,(MusicRestore)
+;	call CallHL
+
+ret
+SaveSettings:
+	call &BB57 ; VDU Disable
+	ld hl,FileName_Settings
+
+	ld bc,SavedSettings_Last-SavedSettings
+	ld de,SavedSettings
+	call BootStrap_SaveDiskFile
+	call &BB54 ; VDU enable
+
+
+	;ld hl,filename ;; HL = address of the start of the filename
+	;bc lengh of file
+	;de source mem pos
+ret
+
+
+RasterColors_ZeroColors:
+	defb 0,0,0
+RasterColors_InitColors:
+	defb 0,4,14,26
+
+;Before the core is active we load files by filename, afterwards we use Track-Sector-Disk
+FileName_Settings:
+	db "SETTINGS.V02"
+FileName_Core:
+	db "CORE    .AKU"
+;FileName_LoadingScreen:
+;	db "T38-SC1 .D01" 
+
+;***************************************************************************************************
+
+;					Generic Startlevel
+
+;***************************************************************************************************
+;ifdef Support128k
+;GenericStartLevel128k
+;	di
+;
+;	push hl
+;		ld bc,&7f8D	; Reset the firmware to OFF
+;		out (c),c
+;		call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+;	pop hl
+;
+	;copy the music back
+;	ld a,&C4
+;	ld de,Akuyou_MusicPos;&B000
+;	ld bc,&400
+;	call BankSwitch_C0_BankCopy
+
+	;get the plus sprites
+;ifdef SupportPlus
+;	ld a,(CPCVer)
+;	and 1
+;	jp z,GenericStartLevel128kB
+;This part is plus only
+;	ld a,&C4
+;	ld hl,&4000
+;	ld de,Akuyou_PlusSpritesPos;&A800
+;	ld bc,&800
+;	call BankSwitch_C0_BankCopy
+
+;jp GenericStartLevel128kB
+;endif
+
+
+
+GenericStartLevel:
+
+	di
+	ld bc,&7f8D	; Reset the firmware to OFF
+	out (c),c
+	call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+
+	call LevelReset0000
+	jp LevelData_StartLevel ; the Bootstrap will be overwritten by the screenbuffer
+
+
+
+
+;***************************************************************************************************
+
+;					Music Loader
+
+;***************************************************************************************************
+;Bootstrap_MusicInitMenu:
+;	
+;	ld a,&C0
+;	ld hl,DiskMap_MusicMenu
+;	ld c,DiskMap_MusicMenu_Disk
+;	ld de,Akuyou_MusicPos
+;	;call Akuyou_LoadDiscSector
+;
+;
+;jp GenericStartLevel
+;
+;
+;Bootstrap_MusicInitBoss:
+;
+;	ld a,&C0
+;	ld hl,DiskMap_MusicBoss
+;	ld c,DiskMap_MusicBoss_Disk
+;	ld de,Akuyou_MusicPos
+;	call Akuyou_LoadDiscSector
+;
+;
+;jp GenericStartLevel
+;
+;
+;Bootstrap_MusicInitLevel:
+;
+;	ld a,&C0
+;	ld hl,DiskMap_MusicLevel
+;	ld c,DiskMap_MusicLevel_Disk
+;	ld de,Akuyou_MusicPos
+;	call Akuyou_LoadDiscSector
+;jp GenericStartLevel
+
+
+;Bootstrap_MusicInitIntro
+;
+;
+;	call Blackout64k
+;	call Akuyou_Firmware_Kill ; Backup the firmware so the Level can override it
+;
+;	;ld hl,DiskMap_MusicIntro
+	;ld b,DiskMap_MusicIntro_Size
+;	;ld c,DiskMap_MusicIntro_Disk
+;ret
+;jp GenericStartLevel
+
+
+;Bootstrap_MusicInitNone
+
+;	ld hl,DiskMap_SFX
+;	ld b,DiskMap_SFX_Size
+;	ld c,DiskMap_SFX_Disk
+
+;Bootstrap_MusicInitGeneric
+;	ld a,4			;; bank number
+;	ld de,&4000		;; load address
+;	push de
+;		call Akuyou_LoadDiscSector
+;	Pop de
+;	ld hl,Akuyou_Music_Init
+;	ld a,4
+;	jp Akuyou_BankSwitch_128k_CallHL
+
+Bootstrap_MusicInit:
+
+
+
+	;ld de,&E00		;; load address
+	;push de
+	;ld hl,TestSFXFileName
+	;ld a,0			;; bank number
+	;call Akuyou_LoadDiskFileFromHLtoBankA
+	;call LoadDiskFileFromHL
+
+	ld a,&C0
+	ld hl,DiskMap_SFX
+;	ld b,DiskMap_SFX_Size
+	ld c,DiskMap_SFX_Disk
+	ld de,Akuyou_SfxPos
+	push de
+	call Akuyou_LoadDiscSector
+	pop de
+	jp Akuyou_Sfx_Init;
+
+	;jp Bootstrap_MusicInitLevel
+	;ld a,0
+	;call Akuyou_BankSwitch_128k 
+
+
+	;call PLY_InterruptionOn	;		to play the song from start.
+;	call Player + 3 / PLY_InterruptionOff		to stop the song.
+;	call Player + 6 / PLY_InterruptionContinue	to continue the song once it's been stopped.
+;	ret
+
+;This backs up the level colors, and uses the 'safe color' pallete
+;used by the continue screen to pause the level, then restore it later
+BootsStrap_BasicColors:
+	ld hl,(RasterColors_ColorArray1Pointer_Plus2-2);,bc
+	ld (BootsStrap_RestoreColors_BC_Plus2-2),hl
+	ld hl,(RasterColors_ColorArray2Pointer_Plus2-2);,de
+	ld (BootsStrap_RestoreColors_DE_Plus2-2),hl
+	ld hl,(RasterColors_ColorArray3Pointer_Plus2-2);,hl
+	ld (BootsStrap_RestoreColors_HL_Plus2-2),hl
+	ld hl,(RasterColors_ColorArray4Pointer_Plus2-2);,ix
+	ld (BootsStrap_RestoreColors_IX_Plus2-2),hl
+	ld hl,(RasterColors_PerFrameCallRestore_Plus2-2);,iy
+	ld (BootsStrap_RestoreColors_IY_Plus2-2),hl
+	ld iy,null
+	push de
+	push de
+	push de
+	pop bc	
+	pop hl
+	pop ix
+	jr BootsStrap_RestoreColors_Doset
+BootsStrap_RestoreColors:
+	ld bc,&0000 :BootsStrap_RestoreColors_BC_Plus2
+	ld de,&0000:BootsStrap_RestoreColors_De_Plus2
+	ld hl,&0000:BootsStrap_RestoreColors_HL_Plus2
+	ld ix,&0000:BootsStrap_RestoreColors_IX_Plus2
+	ld iy,&0000:BootsStrap_RestoreColors_IY_Plus2
+	jr BootsStrap_RestoreColors_Dosetb
+BootsStrap_RestoreColors_Doset:
+	ld iy,null
+BootsStrap_RestoreColors_Dosetb:
+	ld a,1
+
+	jp RasterColors_SetPointers
+
+
+ifdef SupportPlus 
+Plus_BankCopy:
+	push bc
+		ld bc,&7fb8
+		out (c),c
+		ld c,&8D
+		out (c),c
+	pop bc
+	;call &b909
+
+	ldir
+	ld bc,&7fA8
+	out (c),c
+	ld c,&8D	; Reset the firmware to OFF
+	out (c),c
+ret
+endif
+
+
+BootsStrap_ContinueScreen:
+	;call Akuyou_Music_Restart
+
+	ld de,RasterColors_Safe_ForInterrupt
+	call BootsStrap_BasicColors
+
+;	ld hl,(MusicRestore)
+;	call CallHL
+
+
+	call RasterColors_RestoreInterrupt	
+
+	;call Akuyou_RasterColors_MusicOnly
+	ei
+	;ld a,7
+	;call BankSwitch_128k	; our font is back in memory at &4000
+	ld a,2
+	call SpriteBank_Font
+;	ld hl,Font_RegularSizePos 
+;	call	Akuyou_ShowSprite_SetBankAddr
+
+	call AkuYou_Player_GetPlayerVars
+	ld a,(iy+5)	
+	or a
+	jp z,GameOver
+	;ld a,3
+	;call DrawText_SetPen
+	
+
+
+
+	ld a,CSprite_Continue  *3		;Loading
+	call Akuyou_ShowCompiledSprite
+
+	ifdef Support64k	
+	;simpler compiled sprite for 64k
+		ld a,(CPCVer)
+		and 128
+		jr nz,Skip64kcompiled
+		call CompiledSpriteContinue
+	endif
+Skip64kcompiled:
+	ld a,2
+	call SpriteBank_Font
+
+	ld hl,&0F12				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,txtPressButtonMsg2;txtContinueMsg
+	ld a,255
+	ld i,a
+	call Akuyou_DrawText_PrintString	
+
+
+	ld l,&14				; show how many credits are left
+;	call Akuyou_DrawText_LocateSprite	
+;	ld bc,txtCreditsMsg
+;	ld a,255
+;	ld i,a
+;	call Akuyou_DrawText_PrintString	
+
+;	call AkuYou_Player_GetPlayerVars
+
+	call ShowContinues
+
+
+	ld B,10
+	ld ixl,255
+
+Player_Dead_CountDown:
+	
+	dec B					; Show the countdown
+	jp z,GameOver;Player_Dead_Resume ;GameOver		;Player_Dead_Resume=continue on zero		
+	ld hl,&1417
+	call Akuyou_DrawText_LocateSprite 
+	ld a,48
+	add B
+	push bc
+		call Akuyou_DrawText_CharSprite  
+	pop bc
+
+	ld a,b
+	cp 8
+	jr C,Player_Dead_PauseForFire
+	call PauseASec
+	jr Player_Dead_Pause
+Player_Dead_PauseForFire
+	call PauseASecForFire
+
+Player_Dead_Pause:
+	
+	ld a,b
+	cp 8
+	jr NC,Player_Dead_CountDown
+
+	ld a, ixl	; read the keymap
+	or Keymap_AnyFire
+	cp 255
+	jp nz,Player_Dead_Resume
+	
+	ld a, ixh	; read the keymap
+	or Keymap_AnyFire
+	cp 255
+	jp nz,Player_Dead_Resumep2
+
+	jr Player_Dead_CountDown
+Player_Dead_Resumep2:
+	ld iy,Player_Array2
+	jr Player_Dead_ResumeB
+Player_Dead_Resume:
+;	call AkuYou_Player_GetPlayerVars
+	ld iy,Player_Array
+Player_Dead_ResumeB:
+	ld a,3
+	ld (iy+9),a
+	ld a,(SmartbombsReset)
+	ld (iy+3),a
+
+SpendCreditSelfMod2:	ld iy,Player_Array		; All credits are (currently) stored in player 1's var!	
+
+	ld a,(iy+5)
+	dec a
+	ld (iy+5),a
+
+	xor a
+	ld (ShowContinueCounter_Plus1-1),a
+
+	
+
+	;re-enable our buffered screen and bits
+	di
+	call BootsStrap_RestoreColors
+	
+;	call Firmware_Kill
+	call RasterColors_RestoreInterrupt	
+
+	ld a,&80
+	jp CLSB
+;	ret
+
+
+;ShowContinues
+;	ld a,(P1_P05)	
+;	call DrawText_Decimal		
+
+;	ld a,"/"
+;	call Akuyou_DrawText_CharSprite
+
+;	ld a,(P2_P05)	
+;	jp DrawText_Decimal	
+
+;txtContinueMsg
+;
+;	db "Continue","?"+&80
+;txtCreditsMsg
+;
+;	db "Credits",":;"+&80
+
+PauseASec:
+	push bc
+	ld b,250
+	ld c,4
+PauseASecB:
+		push bc
+			call AkuYou_Player_ReadControls
+		pop bc
+		
+	djnz PauseASecB
+	dec c
+	ld a,c
+	or a
+	jp nz,PauseASecB
+
+	pop bc
+ret
+
+
+PauseASecForFire:
+	push bc
+	ld b,250
+	ld c,4
+PauseASecForFireB:
+		push bc
+			call AkuYou_Player_ReadControls
+		pop bc
+		ld a, ixl	; read the keymap
+		or Keymap_AnyFire
+		cp 255
+		jp nz,PauseASecForFireDone
+		ld a, ixh	; read the keymap
+		or Keymap_AnyFire
+		cp 255
+		jp nz,PauseASecForFireDone
+	djnz PauseASecForFireB
+	dec c
+	ld a,c
+	or a
+	jp nz,PauseASecForFireB
+
+PauseASecForFireDone
+	pop bc
+ret
+;Insulting player messages!
+txtGameOver1Msg:
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+; db 5,"The Monster Hoarde Has Drive","n"+&80
+; db 7,"Chibiko from her homelan","d"+&80
+; db 2,"She is forced to live in a cardboar","d"+&80
+;db 8,"box as a street vampire","!"+&80
+; db 1,"With Chibiko gone, Peace and harmon","y"+&80
+; db 6,"Spreads through out the land","."+&80
+;db 8,"(Boy! Did you fuck up!",")"+&80
+;db 0
+RankText:
+
+ db 2,"Your 'Chibiko Scoring System (TM)","'"+&80
+db 15,"Rank was","-"+&80
+	db 0
+RankF:
+	db 17,"*****"," "+&80
+	db 17,"*    "," "+&80
+	db 17,"*****"," "+&80
+	db 17,"*    "," "+&80
+	db 17,"*    "," "+&80
+	db 0
+ChibikoReview:
+	db 10,"Chibiko says:"," "+&80
+	db 0
+
+ChibikoReviewsWin:
+defw ChibikoReviewWin
+
+ChibikoReviewsNewScore:
+defw ChibikoReview1
+defw ChibikoReview2
+defw ChibikoReview3
+defw ChibikoReview4
+
+ChibikoReviewsMehScore:
+defw ChibikoReview5
+defw ChibikoReview6
+defw ChibikoReview7
+defw ChibikoReview8
+ChibikoReviewWin:
+
+	db 10,"Well, you won","!"+&80
+	db 10,"But I'm still giving you a F","!"+&80
+	db 10,"Haven't you learned yet","?"+&80
+	db 10,"The only way to win is not "," "+&80
+	db 10,"to play!"," "+&80
+	db 0
+ChibikoReview1:
+	db 10,"Well done","!"+&80
+
+	db 10,"You played the game"," "+&80
+	db 10,"ALL BY YOURSELF!"," "+&80
+	db 10,"Won't your mommy be proud","!"+&80
+	db 0
+
+ChibikoReview2:
+	db 10,"Amazing!!","!"+&80
+	db 10,"Maybe one day you'll eve","n"+&80
+	db 10,"Be able to tie your shoe","e"+&80
+	db 10,"without drooling all over"," "+&80
+	db 10,"Yourself firs","t"+&80
+	db 0
+
+ChibikoReview3:
+	db 10,"Superb Performance","!"+&80
+	db 10," "," "+&80
+	db 10,"Nah! I'm humoring you",","+&80
+;	       123456789012345678901234567890
+	db 10,"Really, you were just awful","!"+&80
+	db 0
+ChibikoReview4:
+	db 10,"You call that playing","?"+&80
+	db 10,"I've seen things on fir","e"+&80
+	db 10,"Move better than that","!"+&80
+	db 0
+
+;	db 10,"Well Done","!"+&80
+;	db 10,"I'm sure there's worse player","s"+&80
+;	db 10,"out there, I mean, the worl","d"+&80
+;	db 10,"population is 7 billio","n"+&80
+;	db 10,"....There MUST be, right","?"+&80
+;	db 0
+
+
+ChibikoReview5:
+
+	db 10,"Whoa! What happened there","!"+&80
+	db 10,"I'd call you a complete an","d"+&80
+	db 10,"utter waste of life, bu","t"+&80
+
+	db 10,"You'd take it as a compliment","!"+&80
+	db 0
+ChibikoReview6:
+	db 10,"Sooo! you're as useless as "," "+&80
+	db 10,"You are stupid and ugly!!"," "+&80
+	db 10,"Well, at least you're","!"+&80
+	db 10,"consistent","!"+&80
+	db 0
+ChibikoReview7:
+
+	db 10,"Well..","."+&80
+
+	db 10,"After seeing you in actio","n"+&80
+	db 10,"I think we can rule out"," "+&80
+	db 10,"'Intelligent Design' as th","e"+&80
+	db 10,"source of your species","!"+&80
+	db 0
+
+
+ChibikoReview8:
+;	db 10,"I'd say the purpose of you","r"+&80
+;	db 10,"existance is to defin","e"+&80
+;	db 10,"utter failure so the res","t"+&80
+;	db 10,"of the population can fee","l"+&80
+;	db 10,"superior","!"+&80
+;	db 0
+
+	db 10,"That's the best you can do","?"+&80
+	db 10,"I'd say you best bet is to kil","l"+&80
+	db 10,"yourself and hope that","t"+&80
+	db 10,"reincarnation is a thing","!"+&80
+	db 0
+
+
+;backupmusic
+	;backup music
+;	ld hl,&A800
+;	ld bc,&1000
+;	ld de,&6000
+	;ldir
+	;ret
+;restoremusic
+	;backup music
+;	ld de,&A800
+;	ld bc,&1000
+;	ld hl,&6000
+	;ldir
+;	ret
+GameOverWin:
+
+	call Firmware_Restore
+
+;	ld hl,&4000
+;	call	Akuyou_ShowSprite_SetBankAddr
+
+
+	ld a,&C0			;; bank number
+	ld de,&4000		;; load address
+	ld hl,DiskMap_GameOver 	;; T34-SC2.D01
+	ld c,DiskMap_GameOver_Disk
+	ld ix,&4000+&4000
+	call Akuyou_LoadDiscSectorz
+
+
+
+
+
+
+
+	ld de,RasterColors_Safe_ForInterrupt
+	call BootsStrap_BasicColors
+
+;	ld hl,(MusicRestore)
+;	call CallHL
+;	call backupmusic
+
+	call RasterColors_RestoreInterrupt	
+
+
+	xor a
+	ld (ReviewFilter_Plus1-1),a
+	ld hl,ChibikoReviewsWin
+	ld (ReviewBank_Plus2-2),hl
+	ld (NewScoreBank_Plus2-2),hl	
+
+	jp GameOverWinB
+
+GameoverColors1:
+	defb 1
+	defb 0				
+	defb &54,&58,&5B,&4B	
+GameoverColors2:
+	defb 1
+	defb 0				
+	defb &54,&58,&5B,&4B	
+GameoverColors3:
+	defb 1
+	defb 48
+	defb &54,&4C,&52,&4B
+GameoverColors4:
+	defb 1
+	defb 0				
+	defb &54,&4C,&52,&4B
+
+txtGameOver2aMsg:
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ db 1,"The Yuushas restored"," "+&80
+ db 1,"Chibiko and Bochan"," "+&80
+ db 3,"to humanity..."," "+&80
+db  1," "," "+&80
+ db 1,"Chibiko was sent to"," "+&80
+ db 3,"Sunday School"," "+&80
+db  2,"to repent for her"," "+&80
+db  7,"Sins!"," "+&80
+db  0
+
+txtGameOver2bMsg:
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ db 22+2,"And Bochan was"," "+&80
+ db 22+1,"Forced on an all"," "+&80
+ db 22+1,"vegetable detox!"," "+&80
+db  0
+
+txtGameOver2cMsg:
+;      .1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+;      .9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ db 15,"No Bochan,"," "+&80
+ db 5,"That's a common misconception!"," "+&80
+ db 1,"In fact the toaster makes an excellent"," "+&80
+ db 15,"Bath toy!"," "+&80
+ db 1," "," "+&80
+ db 1,"Now you take your bath, I'm going to"," "+&80
+ db 1,"spend the afternoon playing with this"," "+&80
+ db 6,"dangerously sharp crucifix!"," "+&80
+ db 1," "," "+&80
+ db 3,"Once we're dead and cursed, we'll"," "+&80
+ db 3,"get our magic powers back and be"," "+&80
+ db 1,"able to get revenge for this outrage!"," "+&80
+db  0
+GameOver:
+;jp GameOverReloadMenu
+	;ld bc,&7f8D	; Reset the firmware to OFF
+
+
+
+	ld a,CSprite_Loading *3		; 
+	call Akuyou_ShowCompiledSprite
+
+	ld a,3
+	ld (ReviewFilter_Plus1-1),a	
+	
+	ld hl,ChibikoReviewsMehScore
+	ld (ReviewBank_Plus2-2),hl	
+	ld hl,ChibikoReviewsNewScore 
+	ld (NewScoreBank_Plus2-2),hl	
+;	call backupmusic
+	call Firmware_Restore
+
+
+	ld a,&C0			;; bank number
+	ld de,&4000		;; load address
+	ld hl,DiskMap_GameOver
+	ld b,DiskMap_GameOver_Size
+	ld c,DiskMap_GameOver_Disk
+	ld ix,&4000+&4000
+	call Akuyou_LoadDiscSectorz
+	call &4000
+	
+	;DiskMap_GameOver    		equ &22C2	;T34-SC2.D01
+;	DiskMap_GameOver_Size	equ 12
+;	DiskMap_GameOver_Disk 	equ 1
+
+	call Firmware_Kill
+;	call restoremusic
+;	ld hl,(MusicRestore)
+;	call CallHL
+
+
+
+	ld bc,GameoverColors1
+	ld de,GameoverColors2
+	ld hl,GameoverColors3
+	ld ix,GameoverColors4
+	ld iy,null
+	ld a,1
+	call RasterColors_SetPointers
+
+
+	call RasterColors_RestoreInterrupt	
+
+
+
+
+	ei
+
+	ld hl,Font_RegularSizePos;&4000
+	call	Akuyou_ShowSprite_SetBankAddr
+
+
+	;ld a,3
+	;call DrawText_SetPen
+	
+
+	;ep 1 ver
+;	ld l,&10				; Show the Continue message
+;	call Akuyou_DrawText_LocateSprite	
+;	ld bc,txtGameOver1Msg
+;	call ShowTextLines
+	
+
+	;ep 2 ver
+
+	;ep 1 ver
+	ld l,&2				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,txtGameOver2aMsg
+	call ShowTextLines
+
+	ld l,17				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,txtGameOver2bMsg
+	call ShowTextLines
+
+	Call WaitForFire
+
+	ld de,RasterColors_Safe_ForInterrupt
+	call BootsStrap_BasicColors
+
+
+	call akuyou_cls
+
+
+	call &4003
+
+	ld l,13				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,txtGameOver2cMsg
+	call ShowTextLines
+	Call WaitForFire
+
+GameOverWinB:
+;see if we have a highscore
+
+	ld hl,HighScoreBytes+7
+	ld de,Player_ScoreBytes+7
+	ld b,8
+NewScoreNextDigit:
+	ld c,(hl)
+	ld a,(de)
+	cp c
+	jr c,NewScoreNotHigher
+	jr z,NewScoreDigitEqual
+	jr NewScoreHigher
+NewScoreDigitEqual:
+	dec hl
+	dec de
+	djnz NewScoreNextDigit
+	jr NewScoreNotHigher
+NewScoreHigher:
+
+	ld hl,HighScoreBytes+7
+	ld de,Player_ScoreBytes+7
+	ld b,8
+HighScoreUpdateLoop:
+	ld a,(de)
+	ld (hl),a
+	dec hl
+	dec de
+	djnz HighScoreUpdateLoop
+
+	ld hl,ChibikoReviewsNewScore :NewScoreBank_Plus2
+	ld (ReviewBank_Plus2-2),hl
+NewScoreNotHigher:
+	call &4006
+
+	ld a,2
+	call SpriteBank_Font
+
+
+	ld hl,&0700				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,txtYourScoreMsg
+	ld a,255
+	ld i,a
+	call Akuyou_DrawText_PrintString	
+
+	ld hl,&0A02				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,txtHighScoreMsg
+	ld a,255
+	ld i,a
+	call Akuyou_DrawText_PrintString	
+
+
+
+		ld hl,&2000
+		call DrawText_LocateSprite
+
+		ld hl, Player_ScoreBytes
+		ld b,8	
+		call GameOverScore_NextDigit
+
+		ld hl,&2002
+		call DrawText_LocateSprite
+
+		ld hl,HighScoreBytes	
+		ld b,8
+		call GameOverScore_NextDigit
+
+
+	ld l,&07				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,RankText
+	call ShowTextLines
+
+
+
+	call Firmware_Restore
+	call SaveSettings
+
+	call Firmware_Kill
+;	call restoremusic
+
+	call RasterColors_RestoreInterrupt	
+	ei
+
+
+
+
+	ld l,&0A				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,RankF
+	call ShowTextLines
+
+
+	ld l,&11				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	ld bc,ChibikoReview
+	call ShowTextLines
+
+
+	ld hl,ChibikoReviewsNewScore :ReviewBank_Plus2
+	ld a,r
+	rrca
+	rrca
+ 	and %00000011 :ReviewFilter_Plus1
+	ld b,0
+	ld c,a
+	add hl,bc
+	add hl,bc
+	ld c,(hl)
+	inc hl
+	ld b,(hl)
+
+
+	ld l,&13				; Show the Continue message
+	call Akuyou_DrawText_LocateSprite	
+	
+
+
+	call ShowTextLines
+
+
+	Call WaitForFire
+GameOverReloadMenu:
+	Call StartANewGame
+;	di
+;	ld bc,&4000
+;	ld hl,
+;call BankSwitch_128k_BankCopy	
+
+ld de,RasterColors_Black_ForInterrupt
+call BootsStrap_BasicColors
+
+
+call Firmware_Restore
+di
+
+;call ScreenBuffer_Reset	
+jp Bootstrap_Level_0Again
+
+;	ld hl, &0100
+;	jp Bootstrap_FromHL
+	
+
+GameOverScore_NextDigit:
+	push bc
+	push hl
+
+		ld a,(hl)		
+			add 48 ; Move to the correct digit (first 32 are not in font)
+			 ;add 8 
+			ld b,-2 ; we are drawing backwards!
+			call DrawText_CharSpriteDirect;DrawText_DigitSprite
+
+	pop hl
+	pop bc
+	inc hl
+	dec b
+	jp nz,GameOverScore_NextDigit
+	ret
+
+txtYourScoreMsg:
+	db "Your Score was",":"+&80
+txtHighScoreMsg:
+	db "HighScore",":"+&80
+
+WaitForFire:
+	call PauseASec
+
+
+WaitForFire_Continue:
+	push bc
+		call AkuYou_Player_ReadControls
+	pop bc
+	ld a, ixl	; read the keymap
+	or Keymap_AnyFire
+	cp 255
+	jp z,WaitForFire_Continue
+ret
+
+;DrawText_Decimal:
+;	ld c,0
+;DrawText_DecimalSub100:
+;	cp 100
+;	jp c,DrawText_DecimalLessThan100
+;	inc c
+;	sub 100
+;	jp DrawText_DecimalSub100
+;DrawText_DecimalLessThan100:
+;	ld b,a
+;	ld a,c
+;	or a
+;	jp z,SkipDigit100
+;	add 48
+;	push bc
+;		call Akuyou_DrawText_CharSprite
+;	pop bc
+
+;SkipDigit100:
+;	ld a,b
+;	ld c,0
+;DrawText_DecimalSubTen:
+;	cp 10
+;	jp c,DrawText_DecimalLessThanTen
+;	inc c
+;	sub 10
+;	jr DrawText_DecimalSubTen
+;DrawText_DecimalLessThanTen:
+;	ld b,a
+;	ld a,c
+;	or a
+;	jp z,SkipDigit10
+;	add 48
+;	push bc
+;		call Akuyou_DrawText_CharSprite
+;	pop bc
+;SkipDigit10:
+;	ld a,b
+;	add 48
+;	push bc
+;		call Akuyou_DrawText_CharSprite
+;	pop bc
+;	ret
+
+
+FireMode_Normal:
+	ld hl,null
+	ld (FireUpHandler_Plus2-2),hl
+	ld (FireDownHandler_Plus2-2),hl
+	ld (FireLeftHandler_Plus2-2),hl
+	ld (FireRightHandler_Plus2-2),hl
+	ld hl,SetFireDir_RIGHTsave 
+	ld (Fire2Handler_Plus2-2),hl
+	ld hl,SetFireDir_LEFTsave 
+	ld (Fire1Handler_Plus2-2),hl
+jr FireMode_Both
+FireMode_4D:
+	ld hl,SetFireDir_UP  
+	ld (FireUpHandler_Plus2-2),hl
+	ld hl,SetFireDir_DOWN	  
+	ld (FireDownHandler_Plus2-2),hl
+	ld hl,SetFireDir_LEFT	  
+	ld (FireLeftHandler_Plus2-2),hl
+	ld hl,SetFireDir_RIGHT	  
+	ld (FireRightHandler_Plus2-2),hl
+
+	ld hl,SetFireDir_FireAndSaveRestore  
+	ld (Fire2Handler_Plus2-2),hl
+
+	ld hl,SetFireDir_Fire	 
+	ld (Fire1Handler_Plus2-2),hl
+FireMode_Both:
+	ld a,255
+	ld (DroneFlipFireCurrent_Plus1-1),a
+ret
+
+templateFire1:	bit Keymap_F1,a
+templateFire2:	bit Keymap_F2,a
+
+
+StartANewGame:
+
+	;reset the core
+	ld a,&C9 ;ret
+	ld (PlusToggle1),a
+
+	xor a
+	ld (ShowContinueCounter_Plus1-1),a
+
+
+	ld hl,&00c6	;add 0 - faster than nop nop
+	ld (JR64K_1),hl
+	ld (JR64K_2),hl
+
+	ld a,(CPCVer)
+	and %00000001
+	jr z,StartANewGameNotPlus
+;;;;;;;;;;;;;;;; PLUS code ;;;;;;;;;;;;;;;;;;;;;;;;;;
+		xor a
+		ld (PlusToggle1),a	
+
+StartANewGameNotPlus:
+	ld a,(CPCVer)
+	and 128
+	jr nz,StartANewGameNot64k
+
+
+;;;;;;;;;;;;;;;;64k code ;;;;;;;;;;;;;;;;;;;;;;;;;;
+	ld l,&18
+	ld h,JR64K_To1-JR64K_From1
+	ld (JR64K_1),hl
+	ld h,JR64K_To2-JR64K_From2
+	ld (JR64K_2),hl	
+	ld h,JR64K_To3-JR64K_From3
+	ld (JR64K_3),hl	
+StartANewGameNot64k:
+
+	ld bc,&3E0B		;Split Continues
+	ld de,&2ADD
+	ld a,(ContinueMode)
+	or a
+	jr nz,ContinueModeSet
+
+	ld de,&21FD
+	ld bc,&C90E		;Shared Continues
+ContinueModeSet:
+	ld a,b
+	ld (ShowContinuesSelfMod),a
+	ld a,c
+	ld (ContinuesScreenpos_Plus1-1),a
+	ld (SpendCreditSelfMod),de
+	ld (SpendCreditSelfMod2),de
+	; set our standard Left-Right Firemode
+
+
+	call FireMode_Normal
+
+
+	;reset all the scores n stuff
+	call AkuYou_Player_GetPlayerVars
+	ld a,(iy-15)
+	and %10000000
+	call nz,FireMode_4D
+
+	ld a,1
+	ld (iy-7),a ;live players
+
+
+
+	;multiplay support
+	ld hl,&003E ;ld a,0
+	ld a,(MultiplayConfig)
+	bit 0,a
+	jr z,StartANewGame_NoMultiplay
+	ld hl,&78ED	;in (c),a
+StartANewGame_NoMultiplay:
+	ld (multiplaysupport_Plus2-2),hl
+
+
+
+	; we can swap Fire 1 and 2 for Multiplay joysticks - as redefine doesn't work
+	ld hl,(templateFire1)
+	ld de,(templateFire2)
+
+	ld a,(MultiplayConfig)
+	bit 1,a
+	jr z,StartANewGame_NoControlFlip
+	ex hl,de
+StartANewGame_NoControlFlip:
+	ld (SelfModifyingFire1),hl
+	ld (SelfModifyingFire1b),hl
+	ld (SelfModifyingFire2),de
+
+
+
+
+	call StartANewGamePlayer
+	ld de,Akuyou_PlayerSeparator
+	add iy,de
+	call StartANewGamePlayer
+
+	ld hl,Player_ScoreBytes
+	ld b,8*2
+	xor a
+ScoreWipeNext:
+	ld (hl),a
+	inc hl
+	djnz ScoreWipeNext
+
+
+
+
+	call AkuYou_Player_GetPlayerVars
+	ld de,&00C6
+	bit 6,(iy-11)
+	jr nz,NoBulletSlowdown
+	ld de,&2FCB
+NoBulletSlowdown:
+	ld (StarSlowdown_Plus2-2),de
+
+	ld de,Stars_AddBurst_Top
+	ld bc,BulletConfigHeaven_End-BulletConfigHeaven
+	ld hl,BulletConfigHeaven
+	ld a,2
+	bit 7,(iy-11)
+	jr nz,useheaven
+	ld hl,BulletConfigHell
+	ld a,1
+useheaven:
+
+	ld (BurstSpacing_Plus1-1),a
+	ldir 
+
+
+	
+
+	ld a,(iy-11)
+	and %00000011
+;	or a
+	jp z,Difficulty_Normal
+	cp 1
+	jp z,Difficulty_Easy
+	cp 2
+	jp z,Difficulty_Hard
+ret
+
+
+
+
+
+StartANewGamePlayer:
+
+
+	;player fire directions
+	xor a
+	ld (iy+2),a	;Fire Delay
+	ld (iy+4),a	;drones
+	ld (iy+8),a	;spritenum
+	ld (iy+10),a	;burst fire xfire
+	ld (iy+13),a	;Points to add
+	ld (iy+14),a	;player shoot power
+	ld (iy+9),a	;Player Lives (default both players to dead)
+	ld a,16
+	ld (iy+6),a	;drone pos
+
+	ld a,%00000100
+	ld (iy+11),a	;Fire Speed
+
+	ld a,&67
+	ld (iy+15),a	;Fire Dir
+
+
+	;init player lives
+;	ld a,3;3
+;	ld (iy+9),a
+	ld a,(SmartbombsReset)
+	ld (iy+3),a
+
+	ld a,(ContinuesReset)
+	ld (iy+5),a
+
+;	ld a,(iy+5)
+;	dec a
+;	ld (iy+5),a
+
+	;invincibility
+	ld a,%00000111
+	ld (iy+7),a
+ret
+
+Difficulty_Easy:
+	ld a,%00100000	
+	jr Difficulty_Generic
+	;ld (FireFrequencyA_Plus1-1),a
+	;ld a,%00010000	
+	;ld (FireFrequencyB_Plus1-1),a
+	;ld a,%00010000	
+	;ld (FireFrequencyC_Plus1-1),a
+	;ld a,%00001000;	
+	;ld (FireFrequencyD_Plus1-1),a
+	;ld a,%00000100;	
+	;ld (FireFrequencyE_Plus1-1),a
+	;ret
+Difficulty_Normal:
+	ld a,%00010000	
+	jr Difficulty_Generic
+	;ld (FireFrequencyA_Plus1-1),a
+	;ld a,%00001000	
+	;ld (FireFrequencyB_Plus1-1),a
+	;ld a,%00001000	
+	;ld (FireFrequencyC_Plus1-1),a
+	;ld a,%00000100;	
+	;ld (FireFrequencyD_Plus1-1),a
+	;ld a,%00000010;	
+	;ld (FireFrequencyE_Plus1-1),a
+	;ret
+Difficulty_Hard:
+	ld a,%00001000	
+	jr Difficulty_Generic
+	;ld (FireFrequencyA_Plus1-1),a
+	;ld a,%00000100	
+	;ld (FireFrequencyB_Plus1-1),a
+	;ld a,%00000100	
+	;ld (FireFrequencyC_Plus1-1),a
+	;ld a,%00000010;	
+	;ld (FireFrequencyD_Plus1-1),a
+	;ld a,%00000001;	
+	;ld (FireFrequencyE_Plus1-1),a
+	;ret
+Difficulty_Generic:
+	;ld a,%00001000	
+	ld (FireFrequencyA_Plus1-1),a
+	rrca;ld a,%00000100	
+	ld (FireFrequencyB_Plus1-1),a
+	;ld a,%00000100	
+	ld (FireFrequencyC_Plus1-1),a
+	rrca;	ld a,%00000010;	
+	ld (FireFrequencyD_Plus1-1),a
+	rrca;ld a,%00000001;	
+	ld (FireFrequencyE_Plus1-1),a
+LevelReset0000:
+
+	; wipe our memory, to clear out any junk from old levels
+	ld de,StarArrayPointer+1
+	ld hl,StarArrayPointer
+	ld bc,256*4
+	ld (hl),0
+	ldir 
+
+;di
+;ld hl,&E00
+;ld b,54
+;ld de,&0000
+;call SpFill
+;
+;ld hl,&4000
+;ld b,160
+;ld de,&0000
+;call SpFill
+;ei
+
+;This resets anything the last level may have messed with during play so we can start
+;a new level with everything back to normal
+ResetCore:
+
+	ld a,1
+	call Akuyou_ShowSpriteReconfigureEnableDisable
+
+
+	ld hl,&CC33 
+	ld (StarArrayColors_Plus2-2),hl
+
+
+ld a,&69 
+ld (Timer_CurrentTick_Plus1-1),a
+ld (DroneFlipCurrent_Plus1-1),a
+ld (DroneFlipFireCurrent_Plus1-1),a
+xor a
+ld (EventObjectAnimatorToAdd_Plus1-1),a
+ld (EventObjectSpriteSizeToAdd_Plus1-1),a
+ld (EventObjectProgramToAdd_Plus1-1),a
+ld (Timer_TicksOccured_Plus1-1),a
+ld (Sfx_Sound_Plus1-1),a
+or a
+call DroneFlipFire
+;	ld (Event_LevelTime),a
+;	ld a,(hl)
+;	ld (Event_NextEventTime_Plus1-1),a
+;	inc hl
+;	ld (Event_NextEventPointer_Plus2-2),hl
+
+
+	ld b,12
+	ld hl,PlusSprites_Config1+3
+ZeroPlusSprites:
+	ld (hl),0
+	inc hl
+	inc hl
+	inc hl
+	inc hl
+djnz ZeroPlusSprites
+
+
+
+; PLUS STUFF
+	ld b,RasterColors_4
+ifdef SupportPlus
+	ld a,(CPCVer)
+	and %00000001
+	jp z,ResetCore_NotPlus
+	ld b,RasterColors_4_Plus
+endif 
+
+ResetCore_NotPlus:
+	ld a,b
+	ld (RasterColors_4Ver_Plus1-1),a
+
+
+
+
+
+	; reset reporgrammable stuff  - I AM USING EXX in these, so make sure that EX af and EXX are not used 	
+	;at this point!!!
+	ld hl,Object_DecreaseLifeShot	
+	ld (ObjectShotOverride_Plus2-2),hl
+
+
+	; set stuff that happens every level
+	ld hl,&2064	;x,y
+	ld (Player_Array),hl
+	ld l,&96
+	ld (Player_Array2),hl
+
+	ld hl,domoves
+	ld (ObjectDoMovesOverride_Plus2-2),hl
+
+	ld hl,null
+	ld (SmartBombSpecial_Plus2-2),hl
+	ld (CustomSmartBombEnemy_Plus2-2),hl
+	ld (customPlayerHitter_Plus2-2),hl
+	ld (CustomShotToDeathCall_Plus2-2),hl
+;	defb 100;Y
+;	defb 64 ;X
+
+;	ld bc,Background_ShiftNow
+;	call set_BackgroundScrollDirection
+	;ld a,&05	;Dec B	;04 - INC B
+	ld a,0
+	call Akuyou_Background_SetScroll
+	xor a
+	ld (Sfx_CurrentPriority_Plus1-1),a	; clear the to-do
+	ld (Sfx_Sound_Plus1-1),a	; clear the note
+
+	call DoMovesBackground_SetScroll
+
+	call DoCustomRsts
+	
+	xor a
+	ld iy,null
+	call Akuyou_RasterColors_SetPointers
+
+	;turbo mode! - disable stuff to make the game fster
+
+	ld hl,PLY_Play
+	ld (MusicExec_PerFrame_Plus2-2),hl
+
+	ld hl, RasterColors_TickOverrideFirm 
+	ld (RasterColorInterruptHandler_Plus2-2),hl
+
+	call AkuYou_Player_GetPlayerVars
+
+	ld a,(iy-8)
+	and %00010000
+	ld a,&AF ; Xor a
+	jr z,Turbo_ShowBackgroundSprites
+	;ld a,&C9	; Disabled for now
+Turbo_ShowBackgroundSprites:
+	ld (BackgroundNoSpritesTurbo_Plus1-1),a
+
+
+
+	ld a,(iy-8)
+	and %00000011	;See if we want to turn of music or rasters
+	ret z
+
+	ld hl,null
+	ld (MusicExec_PerFrame_Plus2-2),hl
+	and %00000010	;See if we want to turn of music or rasters
+	ret z
+	;2
+	ld (RasterColorInterruptHandler_Plus2-2),hl
+
+
+ret
+
+BootsStrap_ConfigureControls:
+	ei
+;	ld hl,RasterColors_InitColors
+;	call SetColors
+
+	ld e,1
+	ld hl,RasterColors_Safe
+	call RasterColors_NoDelay
+
+;	ld de,RasterColors_Safe_ForInterrupt
+;	call BootsStrap_BasicColors
+call PauseASec;call KeyboardScanner_Flush ; flush the key buffer
+
+	ld a,2
+	call SpriteBank_Font
+	
+	ld b,8*2
+
+ConfigureControls_Nextkey:
+	push bc
+		ld hl,KeyName
+		ld a,b
+		add b
+		sub 2
+		ld d,0
+		ld e,a
+		add hl,de
+
+		ld c,(hl)	; get the description of the key
+		inc hl
+		ld b,(hl)	; get the description of the key
+
+		push de
+			ld a,255
+			ld i,a	;show 255 chars
+			push bc
+				call cls
+				ld hl,&0A13
+				ld bc,KeyMapString0
+
+				call Akuyou_DrawText_LocateSprite
+				call Akuyou_DrawText_PrintString
+			pop bc
+			ld hl,&120C
+			call Akuyou_DrawText_LocateSprite
+			call Akuyou_DrawText_PrintString
+
+			call KeyboardScanner_WaitForKey
+			
+			ld b,200
+ConfigureControls_Delay
+			halt
+			djnz ConfigureControls_Delay
+
+	
+		pop de
+			ld hl,KeyMap2
+			add hl,de
+		push de
+			ld (hl),a
+			inc hl
+			ld (hl),c
+
+			;call DrawText_PrintHex	
+			;ld a,"-"
+			;call DrawText_PrintChar	
+			;ld a,c
+			;call DrawText_PrintHex	
+		pop de
+;		inc de
+;		inc de
+	pop bc
+	djnz ConfigureControls_Nextkey
+
+;	ld hl,(MusicRestore)
+;	call CallHL
+
+ret
+
+ 
+KeyName: 
+
+	defw KeyMapString8b
+	defw KeyMapString7b
+	defw KeyMapString6b
+	defw KeyMapString5b
+	defw KeyMapString4b
+	defw KeyMapString3b
+	defw KeyMapString2b
+	defw KeyMapString1b
+
+	defw KeyMapString8
+	defw KeyMapString7
+	defw KeyMapString6
+	defw KeyMapString5
+	defw KeyMapString4
+	defw KeyMapString3
+	defw KeyMapString2
+	defw KeyMapString1
+
+;We use - rather than space so the old text is overwritten - remember our
+;spritefont has no space!
+KeyMapString0: db  "Press Key For",":"+&80
+KeyMapString8: db  "--P1-Pause","-"+&80
+KeyMapString7: db  "-P1-SBomb-","-"+&80
+KeyMapString6: db  "-P1-FireR-","-"+&80
+KeyMapString5: db  "-P1-FireL-","-"+&80
+KeyMapString4: db  "-P1-Right-","-"+&80
+KeyMapString3: db  "--P1-Left-","-"+&80
+KeyMapString2: db  "--P1-Down-","-"+&80
+KeyMapString1: db  "--P1-Up---","-"+&80
+
+KeyMapString8b: db  "--P2-Pause","-"+&80
+KeyMapString7b: db  "-P2-SBomb-","-"+&80
+KeyMapString6b: db  "-P2-FireR-","-"+&80
+KeyMapString5b: db  "-P2-FireL-","-"+&80
+KeyMapString4b: db  "-P2-Right-","-"+&80
+KeyMapString3b: db  "--P2-Left-","-"+&80
+KeyMapString2b: db  "--P2-Down-","-"+&80
+KeyMapString1b: db  "--P2-Up---","-"+&80
+
+ClearC000:
+di
+ld hl,&FFFF
+ld b,256
+ld de,&0000
+call SpFill
+ei
+	ld e,1
+	ld hl,RasterColors_Safe
+	call RasterColors_NoDelay
+ret
+
+
+
+SpFill:
+ld (SpRestoreFill_Plus2-2),sp
+
+SpFillContinue:
+ld sp,hl
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+push de
+ld hl,&0000
+add hl,sp
+ld sp,&0000:SpRestoreFill_Plus2
+ei
+di
+djnz SpFillContinue
+ei
+ret
+
+BulletConfigHeaven:
+;Starbust code - we use RST 6 as an 'add command' to save memory - RST 6 calls IY
+;See EventStreamDefinitions for details of how the 'Directions' work
+;Stars_AddBurst_Top
+defw &FFFF;defw &0705
+defw &FFFF;defw &0F0d
+defw &FFFF;defw &1715
+defw &1F1D
+;Stars_AddBurst_TopLeft
+defw &FFFF;defw &0301
+defw &FFFF;defw &0b09
+defw &FFFF;defw &1311
+defw &1b19
+defb 0
+
+;Stars_AddBurst_Right;
+defw &2725
+defw &FFFF;defw &2f2D
+defw &FFFF;defw &3735
+defw &FFFF;defw &3f3D
+;Stars_AddBurst_TopRight
+defw &FFFF;defw &0705
+defw &FFFF;defw &0F0d
+defw &FFFF;defw &1715
+defw &1F1D
+defb 0
+;Stars_AddBurst_Left
+defw &FFFF;defw &0301
+defw &FFFF;defw &0b09
+defw &FFFF;defw &1311
+defw &1b19
+;Stars_AddBurst_BottomLeft
+defw &2321
+defw &FFFF;defw &2b29
+defw &FFFF;defw &3331
+defw &FFFF;defw &3b39
+defb 0
+;Stars_AddBurst_Bottom
+defw &2321
+defw &FFFF;defw &2b29
+defw &FFFF;defw &3331
+defw &FFFF;defw &3b39
+;Stars_AddBurst_BottomRight
+defw &2725
+defw &FFFF;defw &2f2D
+defw &FFFF;defw &3735
+defw &FFFF;defw &3f3D
+defb 0
+
+;Stars_AddBurst_Outer
+defw &FFFF;defw &3737
+defw &FFFF;defw &2727
+defw &FFFF;defw &1717
+defw &FFFF;defw &3131
+defw &FFFF;defw &2121
+defw &FFFF;defw &1111
+;OuterBurstPatternMini
+defw &2F2F
+defw &1F1F
+defw &2929
+defw &1919
+defw &3F39
+defw &0F09
+;Stars_AddObjectOne
+defb 0
+
+;Stars_AddBurst
+defw &FFFF
+defb &FF,&FF
+;Stars_AddBurst_Small
+defw &3632
+defw &2e2A
+defw &2622
+defw &1e1A
+defw &1612
+defb 0
+defw &1d1b
+defw &FFFF;defw &1513
+defw &FFFF;defw &0d0b
+defb 0
+defw &2726
+defw &FFFF;defw &2f2d
+defw &FFFF;defw &1f1d
+defb 0
+defw &2221
+defw &FFFF;defw &1b19
+defw &FFFF;defw &2b29
+
+defb 0
+defw &2d2b
+defw &FFFF;defw &3533
+defw &FFFF;defw &3d3b
+defb 0
+BulletConfigHeaven_End:
+BulletConfigHell:
+;Stars_AddBurst_Top
+defw &0705
+defw &0F0d
+defw &1715
+defw &1F1D
+;Stars_AddBurst_TopLeft
+defw &0301
+defw &0b09
+defw &1311
+defw &1b19
+defb 0
+
+;Stars_AddBurst_Right
+defw &2725
+defw &2f2D
+defw &3735
+defw &3f3D
+;Stars_AddBurst_TopRight
+defw &0705
+defw &0F0d
+defw &1715
+defw &1F1D
+defb 0
+;Stars_AddBurst_Left
+defw &0301
+defw &0b09
+defw &1311
+defw &1b19
+;Stars_AddBurst_BottomLeft
+defw &2321
+defw &2b29
+defw &3331
+defw &3b39
+defb 0
+;Stars_AddBurst_Bottom
+defw &2321
+defw &2b29
+defw &3331
+defw &3b39
+;Stars_AddBurst_BottomRight
+defw &2725
+defw &2f2D
+defw &3735
+defw &3f3D
+defb 0
+
+;Stars_AddBurst_Outer
+defw &3737
+defw &2727
+defw &1717
+defw &3131
+defw &2121
+defw &1111
+;OuterBurstPatternMini
+defw &2F2F
+defw &1F1F
+defw &2929
+defw &1919
+defw &3F39
+defw &0F09
+;Stars_AddObjectOne
+defb 0
+
+;Stars_AddBurst
+defw &3f08
+defb 0,0 
+;Stars_AddBurst_Small
+defw &3632
+defw &2e2A
+defw &2622
+defw &1e1A
+defw &1612
+defb 0
+;Stars_AddBurst_TopWide
+defw &1d1b
+defw &1513
+defw &0d0b
+defb 0
+;Stars_AddBurst_RightWide
+defw &2726
+defw &2f2d
+defw &1f1d
+defb 0
+;Stars_AddBurst_LeftWide
+defw &2221
+defw &1b19
+defw &2b29
+
+defb 0
+;Stars_AddBurst_BottomWide
+defw &2d2b
+defw &3533
+defw &3d3b
+defb 0
+BulletConfigHell_End:
+;the commands we have to send to turn on a plus!
+PlusInitSequence:
+defb &ff,&00,&ff,&77,&b3,&51,&a8,&d4,&62,&39,&9c,&46,&2b,&15,&8a,&cd,&ee
+
+PlusPaletteGame:
+defw &0000			;; colour for sprite pen 1
+defw &0555			;; colour for sprite pen 2
+defw &0AAA				;; colour for sprite pen 3
+defw &0FFF			;; colour for sprite pen 4
+defw &0066			;; colour for sprite pen 5
+defw &00AA			;; colour for sprite pen 6
+defw &0808			;; colour for sprite pen 7
+defw &0F0F			;; colour for sprite pen 8
+defw &0FAC			;; colour for sprite pen 9
+defw &00F0			;; colour for sprite pen 10
+defw &06F7			;; colour for sprite pen 11
+defw &0F00			;; colour for sprite pen 12
+defw &0800			;; colour for sprite pen 13
+defw &0373			;; colour for sprite pen 14
+defw &0333			;; colour for sprite pen 15
+
+
+
+;***************************************************************************************************
+
+;					Bootstrap Disk Loader
+
+;***************************************************************************************************
+
+.cas_out_open equ &bc8c
+.cas_out_direct equ &bc98
+.cas_out_close equ &bc8f
+
+BootStrap_LoadDiskFile:	
+
+; HL - pointer to disk file
+; DE - Destination to write to
+
+	push de
+	ld de,&C000	;; address of 2k buffer, 
+	ld b,12		;12 chars
+	call cas_in_open	
+
+	pop hl
+	jr nc,LoadGiveUp
+	call cas_in_direct
+LoadGiveUp:
+	jp cas_in_close
+
+BootStrap_SaveDiskFile:
+	;ld hl,filename ;; HL = address of the start of the filename
+	;bc lengh of file
+	;de source mem pos
+
+	ifdef ReadOnly	
+		ret
+	endif 
+	
+
+	push bc
+	push de
+
+		ld b,12 ;; B = length of the filename in characters
+		ld de,&C000 ; Address of Buffer
+		call cas_out_open ;; firmware function to open a file for writing
+
+	pop hl  ;ld hl,&c000;; HL = load address
+	pop de	;	ld de,&4000;; DE = length
+	ld bc,&0000;; BC = execution address
+
+	ld a,2 ;; A = file type (2 = binary)
+
+	call cas_out_direct	;; write file
+	call cas_out_close 	;; firmware function to close a file opened for writing
+
+	ld bc,&FA7E            ; FLOPPY MOTOR OFF
+        out (c),c      
+ret
+
+;Mini continue compiles sprite for 64k
+CompiledSpriteContinue:
+ifdef Support64k
+	ifdef CompileEP1
+		read "ContinueCompiled64k.asm"
+	endif 
+	ifdef CompileEP2
+		read "ContinueCompiled64k_Ep2.asm"
+	endif
+endif
+
+lastbyte:defb 0
+
+
+save direct "BootStrp.AKU",Akuyou_BootStrapStart,lastbyte-Akuyou_BootStrapStart	;address,size...}[,exec_address]
+;save direct "T37-SC8.D00",&FAFF,&500	;address,size...}[,exec_address]

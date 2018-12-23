@@ -1,0 +1,25 @@
+Hope you all had a WICKED Christmas, and are looking forward to one HELL of a new year!
+
+Well, as promised, and after several days of nasty debugging, I would like to officially release
+Chibi Akuma(s) V1.00 !!!1
+
+Introduction:
+
+Chibiko didn't get any presents from Santa this year... in fact, in the last year she's been killed by God, banished from hell, and reincarnated as the enemy of all mankind -so it's pretty likely she will never get in his good books again!
+
+Still, she can always do without that 'gotta-buy-it' plush doll, and the coal is always useful for burning 'leftovers'
+
+What's a whole lot less welcome is the strange monsters that have been lurking around the mountains lately - and now they are infesting HER castle!
+
+Join Chibiko in her unholy battle against the invasion of badly drawn, cliche and generally uninspired enemies, pummel your way through 4 levels of brainless firepower crazy action - and unleash hell on the 4 end level boss enemies!
+recommended 
+This game is free! you can get it here:
+
+it's also open source, so use the code for your own stuff if you want:
+
+*** WARNING ***
+This game is satire, it contains religious references, 'graphic' 4 color violence, bad language and general bad behaviour - This game should not be played by those under 15, or people who cannot differentiate between acceptable behaviour in fiction and reality. I do not endorse any of the actions portrayed in this game - it's just a silly bit of fun.
+
+If you think this game may offend you - it probably will - please play something else!
+
+Please use at your own risk! This is my first Assembly game, so there will be bugs in it!

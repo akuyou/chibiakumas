@@ -1,0 +1,4 @@
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\0.Loading..png
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\1.LevelComplete..png
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\2.Continue..png
+comp,E:\Progs\CS_ImageConv\CS_ImageConv\3.SetDisk..bmp
